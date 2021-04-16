@@ -26,6 +26,7 @@ class AffineExpr:
             print(v)
             val += (coeff_vals[v] if v in coeff_vals else 0)*self.coeffs[v]
         val += self.offset
+        print('Evaluation of {0} at {1} = {2}'.format(self, coeff_vals, val))
         return val
 
     def __repr__(self):
@@ -74,13 +75,20 @@ class Piece:
         self.constraints = constraints
 
     def contains(self, r, c):
+        print('Checking containment', r, c)
         for cs in self.constraints:
-            if cs.evaluate({'r' : r, 'c' : c}) == False:
+            if cs.evaluate({Var('r') : r, Var('c') : c}) == False:
+                print('{0}, {1} does not satisfy {2}'.format(r, c, cs))
                 return False
+            else:
+                print('{0}, {1} satisfies {2}'.format(r, c, cs))
         return True
 
     def at(self, r, c):
         return self.value
+
+    def __repr__(self):
+        return '{0} at {1}'.format(self.value, self.constraints)
 
 class Matrix:
 
@@ -99,9 +107,9 @@ class Matrix:
         c = Var('c')
 
         cs = []
-        cs.append(Constraint({r : 1}, 0, '>='))
+        cs.append(Constraint({r : 1}, 1, '>='))
         cs.append(Constraint({r : -1, rows : 1}, 0, '>='))
-        cs.append(Constraint({c : 1}, 0, '>='))
+        cs.append(Constraint({c : 1}, 1, '>='))
         cs.append(Constraint({c : -1, cols : 1}, 0, '>='))
         self.pieces.append(Piece(0, cs))
 
@@ -126,6 +134,7 @@ class Matrix:
     def at(self, r, c):
         for piece in self.pieces:
             if piece.contains(r, c):
+                print(piece, 'contains', r, c)
                 return piece.at(r, c)
         assert(False)
 
@@ -166,7 +175,7 @@ print(D)
 
 D.realize({m : 10, n : 10})
 
-assert(D.at(0, 0) == 0)
+assert(D.at(1, 1) == 0)
 
 D = Matrix('D', m, n)
 D.paste_region(1, [Constraint({r : 1, c : -1}, 0, '=')])
@@ -174,8 +183,11 @@ print(D)
 
 D.realize({m : 10, n : 10})
 
-assert(D.at(0, 0) == 1)
-assert(D.at(1, 0) == 0)
+for p in D.pieces:
+    print(p)
+
+assert(D.at(1, 1) == 1)
+assert(D.at(1, 2) == 0)
 
 A = D.cylindrical_decomposition()
 
