@@ -41,8 +41,6 @@ class Matrix:
     def __repr__(self):
         return self.name
 
-
-
 # Building a zero matrix
 D = Matrix('D', 'm', 'n')
 print(D)
@@ -54,3 +52,10 @@ assert(D.at(0, 0) == 0)
 # cc = Constraint(1, 1, 0, 0, '=')
 # A.add_piece('a', [cc])
 
+D = Matrix('D', 'm', 'n')
+D.paste_region(1, [Constraint([1, -1], 0, '=')])
+print(D)
+
+D.realize({'m' : 10, 'n' : 10})
+
+assert(D.at(0, 0) == 1)
