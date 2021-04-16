@@ -56,14 +56,13 @@ D.realize({'m' : 10, 'n' : 10})
 
 assert(D.at(0, 0) == 0)
 
-# cc = Constraint(1, 1, 0, 0, '=')
-# A.add_piece('a', [cc])
-
 D = Matrix('D', 'm', 'n')
-D.paste_region(1, [Constraint([1, -1], 0, '=')])
+D.paste_region(1, [Constraint({'r' : 1, 'c' : -1}, 0, '=')])
 print(D)
 
 D.realize({'m' : 10, 'n' : 10})
 
 assert(D.at(0, 0) == 1)
 assert(D.at(1, 0) == 0)
+
+
