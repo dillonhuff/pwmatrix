@@ -4,6 +4,12 @@ class Var:
 
     def __init__(self, name):
         self.name = name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, Var) and other.name == self.name
     
     def __repr__(self):
         return self.name
@@ -25,7 +31,7 @@ class AffineExpr:
     def __repr__(self):
         ss = ''
         for c in self.coeffs:
-            ss += str(self.coeffs[c]) + ' ' + c + ' + ';
+            ss += str(self.coeffs[c]) + ' ' + str(c) + ' + ';
         ss += str(self.offset)
         return ss
 
@@ -52,8 +58,13 @@ class Constraint:
             return -1
 
 def substitute(target, replacement, c):
+    print('substituting {0} for {1} in {2}'.format(replacement, target, c))
     if target in c.coeffs:
-        assert(False)
+        value = c.coeffs[target]
+        rep = replacement*value
+        c.coeffs.pop(target)
+        c.offset += rep
+    print('Result: {0}'.format(c))
     return c
 
 class Piece:
