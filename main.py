@@ -5,6 +5,18 @@ class Constraint:
         self.offset = offset
         self.comparator = comparator
 
+    def evaluate(self, coeff_vals):
+        val = 0
+        for v in self.coeffs:
+            print(v)
+            val += coeff_vals[v]*self.coeffs[v]
+        val += self.offset
+        if self.comparator == '=':
+            return val == 0
+        else:
+            assert(False)
+            return -1
+
 class Piece:
 
     def __init__(self, value, constraints):
@@ -12,6 +24,9 @@ class Piece:
         self.constraints = constraints
 
     def contains(self, r, c):
+        for cs in self.constraints:
+            if cs.evaluate({'r' : r, 'c' : c}) == False:
+                return False
         return True
 
     def at(self, r, c):
