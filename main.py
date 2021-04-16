@@ -115,3 +115,6 @@ assert(D.at(1, 0) == 0)
 A = D.cylindrical_decomposition()
 
 assert(len(A.pieces) == 3)
+
+
+
