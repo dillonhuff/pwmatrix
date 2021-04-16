@@ -1,10 +1,8 @@
 class Constraint:
 
-    def __init__(self, rc, cc, bc, b, comparator):
-        self.rc = rc
-        self.cc = cc
-        self.bc = bc
-        self.b = b
+    def __init__(self, coeffs, offset, comparator):
+        self.coeffs = coeffs
+        self.offset = offset
         self.comparator = comparator
 
 class Piece:
@@ -38,6 +36,15 @@ class Matrix:
                 return piece.at(r, c)
         assert(False)
 
+    def paste_region(self, value, constraints):
+        # This function should modify the matrix
+        # so that the piecewise function it represents
+        # returns whatever the value was before this
+        # operation if the value is outside this piece,
+        # and whatever the value is inside this piece
+        # otherwise
+        self.pieces.insert(0, Piece(value, constraints))
+
     def __repr__(self):
         return self.name
 
@@ -59,3 +66,4 @@ print(D)
 D.realize({'m' : 10, 'n' : 10})
 
 assert(D.at(0, 0) == 1)
+assert(D.at(1, 0) == 0)
