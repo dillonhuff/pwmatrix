@@ -1,8 +1,24 @@
+class Var:
+
+    def __init__(self, name):
+        self.name = name
+    
+    def __repr__(self):
+        return self.name
+
 class AffineExpr:
 
     def __init__(self, coeffs, offset):
         self.coeffs = coeffs
         self.offset = offset
+
+    def evaluate(self, coeff_vals):
+        val = 0
+        for v in self.coeffs:
+            print(v)
+            val += (coeff_vals[v] if v in coeff_vals else 0)*self.coeffs[v]
+        val += self.offset
+        return val
 
     def __repr__(self):
         ss = ''
@@ -22,13 +38,13 @@ class Constraint:
         return '{0} {1} 0'.format(AffineExpr(self.coeffs, self.offset), self.comparator)
 
     def evaluate(self, coeff_vals):
-        val = 0
-        for v in self.coeffs:
-            print(v)
-            val += coeff_vals[v]*self.coeffs[v]
-        val += self.offset
+        val =  AffineExpr(self.coeffs, self.offset).evaluate(coeff_vals)
         if self.comparator == '=':
             return val == 0
+        elif self.comparator == '>=':
+            return val >= 0
+        elif self.comparator == '<=':
+            return val <= 0
         else:
             assert(False)
             return -1
@@ -53,15 +69,31 @@ class Matrix:
     def __init__(self, name, rows, cols):
         self.rows = rows
         self.cols = cols
+
         self.name = name
+
+        # TODO: Change to extract free variables from expressions
+        self.parameters = [rows, cols]
+
         self.pieces = []
-        self.pieces.append(Piece(0, []))
+
+        r = Var('r')
+        c = Var('c')
+
+        cs = []
+        cs.append(Constraint({r : 1}, 0, '>='))
+        cs.append(Constraint({c : -1, rows : 1}, 0, '>='))
+        self.pieces.append(Piece(0, cs))
 
     def add_piece(self, value, constraints):
         self.pieces[value] = constraints
 
     def realize(self, values):
-        None
+        new_pieces = []
+        self.pieces = new_pieces
+
+        for v in values:
+            self.parameters.remove(v)
 
     def at(self, r, c):
         for piece in self.pieces:
@@ -95,19 +127,24 @@ class Matrix:
     def __repr__(self):
         return self.name
 
+m = Var('m')
+n = Var('n')
+r = Var('r')
+c = Var('c')
+
 # Building a zero matrix
-D = Matrix('D', 'm', 'n')
+D = Matrix('D', m, n)
 print(D)
 
-D.realize({'m' : 10, 'n' : 10})
+D.realize({m : 10, n : 10})
 
 assert(D.at(0, 0) == 0)
 
 D = Matrix('D', 'm', 'n')
-D.paste_region(1, [Constraint({'r' : 1, 'c' : -1}, 0, '=')])
+D.paste_region(1, [Constraint({r : 1, c : -1}, 0, '=')])
 print(D)
 
-D.realize({'m' : 10, 'n' : 10})
+D.realize({m : 10, n : 10})
 
 assert(D.at(0, 0) == 1)
 assert(D.at(1, 0) == 0)
