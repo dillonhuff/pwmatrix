@@ -90,6 +90,12 @@ class Matrix:
 
     def realize(self, values):
         new_pieces = []
+        for piece in self.pieces:
+            realized = copy.deepcopy(piece)
+            for c in realized.constraints:
+                for v in values:
+                    substitute(v, values[v], c)
+            new_pieces.append(realized)
         self.pieces = new_pieces
 
         for v in values:
