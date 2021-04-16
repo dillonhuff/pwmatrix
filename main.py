@@ -51,6 +51,11 @@ class Constraint:
             assert(False)
             return -1
 
+def substitute(target, replacement, c):
+    if target in c.coeffs:
+        assert(False)
+    return c
+
 class Piece:
 
     def __init__(self, value, constraints):
@@ -84,7 +89,9 @@ class Matrix:
 
         cs = []
         cs.append(Constraint({r : 1}, 0, '>='))
-        cs.append(Constraint({c : -1, rows : 1}, 0, '>='))
+        cs.append(Constraint({r : -1, rows : 1}, 0, '>='))
+        cs.append(Constraint({c : 1}, 0, '>='))
+        cs.append(Constraint({c : -1, cols : 1}, 0, '>='))
         self.pieces.append(Piece(0, cs))
 
     def add_piece(self, value, constraints):
@@ -100,7 +107,9 @@ class Matrix:
             new_pieces.append(realized)
         self.pieces = new_pieces
 
+        print('Parameters:', self.parameters)
         for v in values:
+            print('removing: {0}'.format(v))
             self.parameters.remove(v)
 
     def at(self, r, c):
@@ -148,7 +157,7 @@ D.realize({m : 10, n : 10})
 
 assert(D.at(0, 0) == 0)
 
-D = Matrix('D', 'm', 'n')
+D = Matrix('D', m, n)
 D.paste_region(1, [Constraint({r : 1, c : -1}, 0, '=')])
 print(D)
 
