@@ -41,6 +41,19 @@ print(pwf)
 
 print(compose_pointwise(lambda x, y: x*y, pwf, p0))
 
+# Build a identity matrix
+r, c = symbols("r c")
+N = symbols("N")
+
+Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
+I = PiecewiseExpression()
+
+I.add_piece(0, Bnds + [r < c])
+I.add_piece(0, Bnds + [r > c])
+I.add_piece(1, Bnds + [Eq(r, c)])
+
+print(I)
+
 # import copy
 
 # class Var:
