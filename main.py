@@ -21,6 +21,13 @@ class PiecewiseExpression:
         ss = '[{0}]'.format(self.pieces)
         return ss
 
+def compose_pointwise(op, f, g):
+    composed = PiecewiseExpression()
+    for fp in f.pieces:
+        for gp in g.pieces:
+            composed.pieces.append(Piece(op(fp.f, gp.f), fp.P + gp.P))
+    return composed
+
 x, k = symbols("x k")
 pwf = PiecewiseExpression()
 pwf.add_piece(0, [2*k > x])
