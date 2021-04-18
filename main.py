@@ -90,17 +90,22 @@ print('Prod...')
 print(prod)
 
 coeffs = set()
+lines = set()
 for p in prod.pieces:
     for c in p.P:
         print(c)
         val = c.rhs - c.lhs
         print('\tval =', val)
         print('\tcoeff k =', val.coeff(k))
-        val = val + -1*val.coeff(k)*k
-        print('\tnormed:', val)
-        coeffs.add(val)
+        valsimp = val + -1*val.coeff(k)*k
+        lines.add((val.coeff(k)*k, valsimp))
+        print('\tnormed:', valsimp)
+        coeffs.add(valsimp)
 
 print(coeffs)
+print('Lines...')
+for l in lines:
+    print (l)
         # print('\t', Rel(c.lhs, c.rhs, c.rop))
         # print(simplify(c))
         # print(solveset(c, k, domain=S.Reals))
@@ -113,7 +118,91 @@ print(coeffs)
         # print(reduce_rational_inequalities([[c]], k))
         # print(solve(c, k, domain='ZZ'))
 
+from z3 import Real, Sqrt
+from sympy.core import Mul, Expr, Add, Pow, Symbol, Number
+
+def sympy_to_z3(sympy_var_list, sympy_exp):
+    'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
+
+    z3_vars = []
+    z3_var_map = {}
+
+    for var in sympy_var_list:
+        name = var.name
+        z3_var = Real(name)
+        z3_var_map[name] = z3_var
+        z3_vars.append(z3_var)
+
+    result_exp = _sympy_to_z3_rec(z3_var_map, sympy_exp)
+
+    return z3_vars, result_exp
+
+def _sympy_to_z3_rec(var_map, e):
+    'recursive call for sympy_to_z3()'
+
+    rv = None
+
+    if not isinstance(e, Expr):
+        raise RuntimeError("Expected sympy Expr: " + repr(e))
+
+    if isinstance(e, Symbol):
+        rv = var_map.get(e.name)
+
+        if rv == None:
+            raise RuntimeError("No var was corresponds to symbol '" + str(e) + "'")
+
+    elif isinstance(e, Number):
+        rv = float(e)
+    elif isinstance(e, Mul):
+        rv = _sympy_to_z3_rec(var_map, e.args[0])
+
+        for child in e.args[1:]:
+            rv *= _sympy_to_z3_rec(var_map, child)
+    elif isinstance(e, Add):
+        rv = _sympy_to_z3_rec(var_map, e.args[0])
+
+        for child in e.args[1:]:
+            rv += _sympy_to_z3_rec(var_map, child)
+    elif isinstance(e, Pow):
+        term = _sympy_to_z3_rec(var_map, e.args[0])
+        exponent = _sympy_to_z3_rec(var_map, e.args[1])
+
+        if exponent == 0.5:
+            # sqrt
+            rv = Sqrt(term)
+        else:
+            rv = term**exponent
+
+    if rv == None:
+        raise RuntimeError("Type '" + str(type(e)) + "' is not yet implemented for convertion to a z3 expresion. " + \
+                            "Subexpression was '" + str(e) + "'.")
+
+    return rv
+
 # print(solve([1 <= r + k], k, domain='ZZ'))
 
 # print(prod.as_expr_set_pairs())
 # print(prod._intervals(k))
+from sympy import symbols
+from z3 import Solver, sat
+
+var_list = x, y = symbols("x y")
+
+sympy_exp = -x**2 + y + 1
+z3_vars, z3_exp = sympy_to_z3(var_list, sympy_exp)
+
+z3_x = z3_vars[0]
+z3_y = z3_vars[1]
+
+s = Solver()
+s.add(z3_exp == 0) # add a constraint with converted expression
+s.add(z3_y >= 0) # add an extra constraint
+
+result = s.check()
+
+if result == sat:
+    m = s.model()
+
+    print ("SAT at x={}, y={}".format(m[z3_x], m[z3_y]))
+else:
+    print ("UNSAT")
