@@ -26,7 +26,13 @@ pwf = PiecewiseExpression()
 pwf.add_piece(0, [2*k > x])
 pwf.add_piece(1, [2*k <= x])
 
+p0 = PiecewiseExpression()
+p0.add_piece(5, [k > x])
+p0.add_piece(7, [k <= x])
+
 print(pwf)
+
+print(compose_pointwise(lambda x, y: x*y, pwf, p0))
 
 # import copy
 
