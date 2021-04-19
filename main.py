@@ -223,7 +223,7 @@ def product(A, B):
                 ku = cc[1].rhs
             rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
 
-        matrix_product.add_piece(rc_sums, order_cs)
+        matrix_product.add_piece(rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
 matprod = product(I, I)
