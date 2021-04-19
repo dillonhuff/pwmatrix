@@ -239,13 +239,21 @@ print('Prod culled pieces:', len(prod_culled.pieces))
 
 print('Adding context...')
 
-orders = [[r > c], [c > r], [Eq(c, r)]]
+orders = [[[r], [c]], [[c], [r]], [[r, c]]]
 constraints = [[Eq(k, c)], [Eq(k, r)]]
 for order in orders:
+    order_cs = []
+    for gp in order:
+        for i in gp:
+            for j in gp:
+                if i != j:
+                    order_cs.append(Eq(i, j))
+    for i in range(len(order) - 1):
+        order_cs.append(order[i][0] < order[i + 1][0])
     for cc in constraints:
         print('------- Checking order:', order, 'with constraints:', cc)
         pr = copy.deepcopy(prod)
-        pr.add_context(order + cc)
+        pr.add_context(order_cs + cc)
 
         prod_culled = cull_pieces(pr)
         print('Culled prod')
