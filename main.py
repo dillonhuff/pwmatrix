@@ -221,6 +221,7 @@ def product(A, B):
             ku = cc[0].rhs
             if len(cc) == 2:
                 ku = cc[1].rhs
+            # TODO: Should have the sum on the outside
             rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
 
         matrix_product.add_piece(rc_sums, order_cs + prod_culled.pieces[0].P)
