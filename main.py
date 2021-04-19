@@ -42,6 +42,16 @@ class PiecewiseExpression:
         ss = '[{0}]'.format(self.pieces)
         return ss
 
+    def to_sympy(self):
+        symps = []
+        for p in self.pieces:
+            cond = sympify(True)
+            for cs in p.P:
+                cond = cond & cs
+            print('cond = ', cond)
+            symps.append((p.f, cond))
+        return Piecewise(*symps)
+
 def compose_pointwise(op, f, g):
     composed = PiecewiseExpression()
     for fp in f.pieces:
@@ -206,7 +216,6 @@ def enumerate_orders(terms):
         sub_ords = place_t_in_order(t, other_ord)
         orders = orders + sub_ords
 
-    # orders = [[[r], [c]], [[c], [r]], [[r, c]]]
     return orders
 
 print(enumerate_orders([r, c]))
@@ -222,8 +231,7 @@ def product(A, B):
     terms_to_order = [r, c]
 
     orders = enumerate_orders(terms_to_order)
-    # orders = [[[r], [c]], [[c], [r]], [[r, c]]]
-    constraints = [[Eq(k, c)], [Eq(k, r)]]
+    # constraints = [[Eq(k, c)], [Eq(k, r)]]
 
     matrix_product = PiecewiseExpression()
     for order in orders:
@@ -238,13 +246,16 @@ def product(A, B):
             order_cs.append(order[i][0] < order[i + 1][0])
 
         k_ranges = []
-        rc_sums = 0
         for gp in order:
             k_ranges.append([Eq(k, gp[0])])
         for i in range(len(order) - 1):
             kl = k >= order[i][0] + 1
             ku = k < order[i + 1][0]
             k_ranges.append([kl, ku])
+
+        # Compute the sum terms in k
+        rc_sums = 0
+        sigma_terms = []
         for cc in k_ranges:
             print('------- Checking order:', order, 'with constraints:', cc)
             pr = copy.deepcopy(prod)
@@ -261,12 +272,20 @@ def product(A, B):
                 ku = cc[1].rhs
             # TODO: Should have the sum on the outside
             rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
+            sigma_terms.append((prod_culled, (k, kl, ku)))
 
-        matrix_product.add_piece(rc_sums, order_cs + prod_culled.pieces[0].P)
+        print('\nsigma terms:', sigma_terms)
+        rcs = 0
+        for s in sigma_terms:
+            rcs = rcs + Sum(s[0].to_sympy(), s[1])
+        print(rcs)
+        # assert(False)
+        matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
 Dense = PiecewiseExpression()
-Dense.add_piece(nsimplify(12), Bnds)
+f = Function("f")
+Dense.add_piece(nsimplify(f(r, c)), Bnds)
 
 matprod = product(I, Dense)
 print(matprod)
