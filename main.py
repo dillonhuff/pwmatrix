@@ -241,6 +241,8 @@ print('Adding context...')
 
 orders = [[[r], [c]], [[c], [r]], [[r, c]]]
 constraints = [[Eq(k, c)], [Eq(k, r)]]
+
+matrix_product = PiecewiseExpression()
 for order in orders:
     print('####### Checking order')
     order_cs = []
@@ -253,6 +255,7 @@ for order in orders:
         order_cs.append(order[i][0] < order[i + 1][0])
 
     k_ranges = []
+    rc_sums = 0
     # Points
     for gp in order:
         k_ranges.append([Eq(k, gp[0])])
@@ -270,7 +273,11 @@ for order in orders:
         print(prod_culled)
         print('Prod culled pieces:', len(prod_culled.pieces))
         assert(len(prod_culled.pieces) == 1)
+        rc_sums = rc_sums + prod_culled.pieces[0].f
 
+    matrix_product.add_piece(rc_sums, order_cs)
+
+print(matrix_product)
 # Now: Need to add possible order constraints
 # and then cull each sum.
 # There is another problem: I need to be able
