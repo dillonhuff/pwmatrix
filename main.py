@@ -291,8 +291,12 @@ Symmetric = PiecewiseExpression()
 Symmetric.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 Symmetric.add_piece(nsimplify(f(c, r)), Bnds + [r > c])
 
+UpperTriangular= PiecewiseExpression()
+UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
+UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
+
 # matprod = product(I, Dense)
-matprod = product(Symmetric, Symmetric)
+matprod = product(UpperTriangular, UpperTriangular)
 print(matprod)
 
 print('---pieces')
