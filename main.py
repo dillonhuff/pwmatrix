@@ -50,7 +50,6 @@ class PiecewiseExpression:
                 cond = cond & cs
             print('cond = ', cond)
             symps.append((p.f, cond))
-        symps.append((0, True))
         return Piecewise(*symps)
 
 def compose_pointwise(op, f, g):
@@ -278,7 +277,7 @@ def product(A, B):
         print('\nsigma terms:', sigma_terms)
         rcs = 0
         for s in sigma_terms:
-            rcs = rcs + Sum(s[0].to_sympy(), s[1])
+            rcs = rcs + Sum(s[0].to_sympy(), s[1]).doit()
         print(rcs)
         # assert(False)
         matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
@@ -294,7 +293,7 @@ print(matprod)
 print('---pieces')
 for p in matprod.pieces:
     print(p)
-    print(ccode(p.f))
+    # print(ccode(p.f))
     print()
 
 
