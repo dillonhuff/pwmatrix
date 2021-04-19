@@ -5,6 +5,7 @@ from sympy import symbols
 from z3 import Solver, sat
 from z3 import Int, Real, Sqrt
 from sympy.core import Mul, Expr, Add, Pow, Symbol, Number
+import islpy as isl
 
 class Piece:
 
@@ -50,33 +51,6 @@ def compose_pointwise(op, f, g):
 
 def pwmul(a, b):
     return compose_pointwise(lambda x, y: x*y, a, b)
-
-x, k = symbols("x k")
-
-pwf = PiecewiseExpression()
-
-pwf.add_piece(0, [2*k > x])
-pwf.add_piece(1, [2*k <= x])
-
-p0 = PiecewiseExpression()
-p0.add_piece(5, [k > x])
-p0.add_piece(7, [k <= x])
-
-print(pwf)
-
-print(compose_pointwise(lambda x, y: x*y, pwf, p0))
-
-# Build the identity matrix
-r, c = symbols("r c")
-N = symbols("N")
-
-Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
-I = PiecewiseExpression()
-I.add_piece(nsimplify(0), Bnds + [r < c])
-I.add_piece(nsimplify(0), Bnds + [r > c])
-I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
-
-print(I)
 
 def sympy_to_z3(sympy_var_list, sympy_exp):
     'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
@@ -174,8 +148,69 @@ def cull_pieces(I):
             print ("UNSAT")
 
     return I_culled
+x, k = symbols("x k")
+
+pwf = PiecewiseExpression()
+
+pwf.add_piece(0, [2*k > x])
+pwf.add_piece(1, [2*k <= x])
+
+p0 = PiecewiseExpression()
+p0.add_piece(5, [k > x])
+p0.add_piece(7, [k <= x])
+
+print(pwf)
+
+print(compose_pointwise(lambda x, y: x*y, pwf, p0))
+
+# Build the identity matrix
+r, c = symbols("r c")
+N = symbols("N")
+
+Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
+I = PiecewiseExpression()
+I.add_piece(nsimplify(0), Bnds + [r < c])
+I.add_piece(nsimplify(0), Bnds + [r > c])
+I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+
+print(I)
+
 
 print(cull_pieces(I))
+
+def place_t_in_order(t, term_order):
+    ords = []
+    # Create a group where t is in each equivalence class
+    for i in range(len(term_order)):
+        cpyord = copy.deepcopy(term_order)
+        cpyord[i].append(t)
+        ords.append(cpyord)
+
+    # Create a group where t is between each equivalence class
+    for i in range(len(term_order) + 1):
+        cpyord = copy.deepcopy(term_order)
+        cpyord.insert(i, [t])
+        ords.append(cpyord)
+    return ords
+
+def enumerate_orders(terms):
+    if len(terms) == 0:
+        return []
+    if len(terms) == 1:
+        return [[[terms[0]]]]
+
+    orders = []
+    t = terms[0]
+    other_ords = enumerate_orders(terms[1:])
+    for other_ord in other_ords:
+        sub_ords = place_t_in_order(t, other_ord)
+        orders = orders + sub_ords
+
+    # orders = [[[r], [c]], [[c], [r]], [[r, c]]]
+    return orders
+
+print(enumerate_orders([r, c]))
+assert(len(enumerate_orders([r, c])) == 3)
 
 def product(A, B):
     r, c, k = symbols("r c k")
@@ -184,7 +219,10 @@ def product(A, B):
 
     prod = pwmul(Il, Ir)
 
-    orders = [[[r], [c]], [[c], [r]], [[r, c]]]
+    terms_to_order = [r, c]
+
+    orders = enumerate_orders(terms_to_order)
+    # orders = [[[r], [c]], [[c], [r]], [[r, c]]]
     constraints = [[Eq(k, c)], [Eq(k, r)]]
 
     matrix_product = PiecewiseExpression()
@@ -227,12 +265,10 @@ def product(A, B):
         matrix_product.add_piece(rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
-# matprod = product(I, I)
-# print(matprod)
-
 Dense = PiecewiseExpression()
 Dense.add_piece(nsimplify(12), Bnds)
 
 matprod = product(I, Dense)
 print(matprod)
+
 
