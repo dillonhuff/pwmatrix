@@ -290,4 +290,6 @@ Dense.add_piece(nsimplify(f(r, c)), Bnds)
 matprod = product(I, Dense)
 print(matprod)
 
-
+print('---pieces')
+for p in matprod.pieces:
+    print(p)
