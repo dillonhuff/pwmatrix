@@ -16,10 +16,28 @@ class Piece:
     def __repr__(self):
         return '({0} if {1})'.format(self.f, self.P)
 
+    @property
+    def free_symbols(self):
+        syms = set()
+        for s in self.f.free_symbols:
+            syms.add(s)
+        for cs in self.P:
+            for cc in cs.free_symbols:
+                syms.add(cc)
+        return syms
+
 class PiecewiseExpression:
 
     def __init__(self):
         self.pieces = []
+
+    @property
+    def free_symbols(self):
+        syms = set()
+        for p in self.pieces:
+            for s in p.free_symbols:
+                syms.add(s)
+        return syms
 
     def add_context(self, c):
         for p in self.pieces:
@@ -279,7 +297,6 @@ def product(A, B):
         for s in sigma_terms:
             rcs = rcs + Sum(s[0].to_sympy(), s[1]).doit()
         print(rcs)
-        # assert(False)
         matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
@@ -291,7 +308,7 @@ Symmetric = PiecewiseExpression()
 Symmetric.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 Symmetric.add_piece(nsimplify(f(c, r)), Bnds + [r > c])
 
-UpperTriangular= PiecewiseExpression()
+UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
@@ -305,4 +322,10 @@ for p in matprod.pieces:
     # print(ccode(p.f))
     print()
 
+def codegen(pwf, constant_values, variable_domains):
+    ss = 'void realize_pwf({0})'.format(pwf.free_symbols) + '{\n'
+    ss += '}\n'
+    return ss
 
+print('----- Codegen')
+print(codegen(p, [], []))
