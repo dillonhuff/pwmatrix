@@ -66,8 +66,7 @@ print(pwf)
 
 print(compose_pointwise(lambda x, y: x*y, pwf, p0))
 
-
-# Build a identity matrix
+# Build the identity matrix
 r, c = symbols("r c")
 N = symbols("N")
 
@@ -78,54 +77,6 @@ I.add_piece(nsimplify(0), Bnds + [r > c])
 I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 
 print(I)
-# Bnds = And(1 <= r, r <= N, 1 <= c, c <= N)
-# print(Bnds)
-
-# I = Piecewise((nsimplify(0), And(Bnds, r < c)), (nsimplify(0), And(Bnds, r < c)), (nsimplify(1), And(Bnds, Eq(r, c))))
-
-# print(I)
-
-# Il = I.subs(c, k)
-# Ir = I.subs(r, k)
-
-
-
-# # print(Il)
-# # print(Ir)
-
-# prod = pwmul(Il, Ir)
-# print('Prod...')
-# print(prod)
-
-# coeffs = set()
-# lines = set()
-# for p in prod.pieces:
-    # for c in p.P:
-        # print(c)
-        # val = c.rhs - c.lhs
-        # print('\tval =', val)
-        # print('\tcoeff k =', val.coeff(k))
-        # valsimp = val + -1*val.coeff(k)*k
-        # lines.add((val.coeff(k)*k, valsimp))
-        # print('\tnormed:', valsimp)
-        # coeffs.add(valsimp)
-
-# print(coeffs)
-# print('Lines...')
-# for l in lines:
-    # print (l)
-        # # print('\t', Rel(c.lhs, c.rhs, c.rop))
-        # # print(simplify(c))
-        # # print(solveset(c, k, domain=S.Reals))
-
-        # # c.lhs = c.lhs - c.rhs
-        # # c.rhs = 0
-        # # print('\tnormed:', normed)
-        # # if k in c.free_symbols:
-            # # print('\tcontains k')
-        # # print(reduce_rational_inequalities([[c]], k))
-        # # print(solve(c, k, domain='ZZ'))
-
 
 def sympy_to_z3(sympy_var_list, sympy_exp):
     'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
@@ -226,63 +177,55 @@ def cull_pieces(I):
 
 print(cull_pieces(I))
 
-Il = I.subs(c, k)
-Ir = I.subs(r, k)
+def product(A, B):
+    r, c, k = symbols("r c k")
+    Il = A.subs(c, k)
+    Ir = B.subs(r, k)
 
-prod = pwmul(Il, Ir)
+    prod = pwmul(Il, Ir)
 
-print('Prod')
-print(prod)
+    orders = [[[r], [c]], [[c], [r]], [[r, c]]]
+    constraints = [[Eq(k, c)], [Eq(k, r)]]
 
-print('Prod pieces:', len(prod.pieces))
+    matrix_product = PiecewiseExpression()
+    for order in orders:
+        print('####### Checking order')
+        order_cs = []
+        for gp in order:
+            for i in gp:
+                for j in gp:
+                    if i != j:
+                        order_cs.append(Eq(i, j))
+        for i in range(len(order) - 1):
+            order_cs.append(order[i][0] < order[i + 1][0])
 
-prod_culled = cull_pieces(prod)
-print('Culled prod')
-print(prod_culled)
-print('Prod culled pieces:', len(prod_culled.pieces))
+        k_ranges = []
+        rc_sums = 0
+        for gp in order:
+            k_ranges.append([Eq(k, gp[0])])
+        for i in range(len(order) - 1):
+            kl = k >= order[i][0] + 1
+            ku = k < order[i + 1][0]
+            k_ranges.append([kl, ku])
+        for cc in k_ranges:
+            print('------- Checking order:', order, 'with constraints:', cc)
+            pr = copy.deepcopy(prod)
+            pr.add_context(order_cs + cc)
 
-print('Adding context...')
+            prod_culled = cull_pieces(pr)
+            print('Culled prod')
+            print(prod_culled)
+            print('Prod culled pieces:', len(prod_culled.pieces))
+            assert(len(prod_culled.pieces) == 1)
+            kl = cc[0].rhs
+            ku = cc[0].rhs
+            if len(cc) == 2:
+                ku = cc[1].rhs
+            rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
 
-orders = [[[r], [c]], [[c], [r]], [[r, c]]]
-constraints = [[Eq(k, c)], [Eq(k, r)]]
+        matrix_product.add_piece(rc_sums, order_cs)
+    return matrix_product
 
-matrix_product = PiecewiseExpression()
-for order in orders:
-    print('####### Checking order')
-    order_cs = []
-    for gp in order:
-        for i in gp:
-            for j in gp:
-                if i != j:
-                    order_cs.append(Eq(i, j))
-    for i in range(len(order) - 1):
-        order_cs.append(order[i][0] < order[i + 1][0])
-
-    k_ranges = []
-    rc_sums = 0
-    for gp in order:
-        k_ranges.append([Eq(k, gp[0])])
-    for i in range(len(order) - 1):
-        kl = k >= order[i][0] + 1
-        ku = k < order[i + 1][0]
-        k_ranges.append([kl, ku])
-    for cc in k_ranges:
-        print('------- Checking order:', order, 'with constraints:', cc)
-        pr = copy.deepcopy(prod)
-        pr.add_context(order_cs + cc)
-
-        prod_culled = cull_pieces(pr)
-        print('Culled prod')
-        print(prod_culled)
-        print('Prod culled pieces:', len(prod_culled.pieces))
-        assert(len(prod_culled.pieces) == 1)
-        kl = cc[0].rhs
-        ku = cc[0].rhs
-        if len(cc) == 2:
-            ku = cc[1].rhs
-        rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
-
-    matrix_product.add_piece(rc_sums, order_cs)
-
-print(matrix_product)
+matprod = product(I, I)
+print(matprod)
 
