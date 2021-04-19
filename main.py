@@ -225,11 +225,6 @@ print(cull_pieces(I))
 Il = I.subs(c, k)
 Ir = I.subs(r, k)
 
-
-
-# print(Il)
-# print(Ir)
-
 prod = pwmul(Il, Ir)
 
 print('Prod')
@@ -243,10 +238,20 @@ print(prod_culled)
 print('Prod culled pieces:', len(prod_culled.pieces))
 
 print('Adding context...')
-# prod.add_context([Eq(c, r), Eq(k, r)])
-prod.add_context([r > c])
+
+orders = [[r > c], [c > r], [Eq(c, r)]]
+prod.add_context([r > c, Eq(c, k)])
 
 prod_culled = cull_pieces(prod)
 print('Culled prod')
 print(prod_culled)
 print('Prod culled pieces:', len(prod_culled.pieces))
+
+# Now: Need to add possible order constraints
+# and then cull each sum.
+# There is another problem: I need to be able
+# to add contexts to ensure that functions
+# always evaluate. That way I can get rid
+# of the implicity "otherwise undefined"
+# condition in piecewise functions.
+
