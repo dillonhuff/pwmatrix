@@ -1,6 +1,10 @@
 from sympy import *
 from sympy.solvers.inequalities import reduce_rational_inequalities
 import copy
+from sympy import symbols
+from z3 import Solver, sat
+from z3 import Int, Real, Sqrt
+from sympy.core import Mul, Expr, Add, Pow, Symbol, Number
 
 class Piece:
 
@@ -118,8 +122,6 @@ print(I)
         # # print(reduce_rational_inequalities([[c]], k))
         # # print(solve(c, k, domain='ZZ'))
 
-from z3 import Int, Real, Sqrt
-from sympy.core import Mul, Expr, Add, Pow, Symbol, Number
 
 def sympy_to_z3(sympy_var_list, sympy_exp):
     'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
@@ -180,12 +182,6 @@ def _sympy_to_z3_rec(var_map, e):
 
     return rv
 
-# print(solve([1 <= r + k], k, domain='ZZ'))
-
-# print(prod.as_expr_set_pairs())
-# print(prod._intervals(k))
-from sympy import symbols
-from z3 import Solver, sat
 
 # var_list = x, y = symbols("x y")
 # sympy_exp = -x**2 + y + 1
