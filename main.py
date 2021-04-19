@@ -273,7 +273,11 @@ for order in orders:
         print(prod_culled)
         print('Prod culled pieces:', len(prod_culled.pieces))
         assert(len(prod_culled.pieces) == 1)
-        rc_sums = rc_sums + prod_culled.pieces[0].f
+        kl = cc[0].rhs
+        ku = cc[0].rhs
+        if len(cc) == 2:
+            ku = cc[1].rhs
+        rc_sums = rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku))
 
     matrix_product.add_piece(rc_sums, order_cs)
 
