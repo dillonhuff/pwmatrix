@@ -20,6 +20,10 @@ class PiecewiseExpression:
     def __init__(self):
         self.pieces = []
 
+    def add_context(self, c):
+        for p in self.pieces:
+            p.P = p.P + c
+
     def subs(self, x, y):
         rp = copy.deepcopy(self)
         for p in rp.pieces:
@@ -71,7 +75,7 @@ Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
 I = PiecewiseExpression()
 I.add_piece(nsimplify(0), Bnds + [r < c])
 I.add_piece(nsimplify(0), Bnds + [r > c])
-I.add_piece(nsimplify(0), Bnds + [Eq(r, c)])
+I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 
 print(I)
 # Bnds = And(1 <= r, r <= N, 1 <= c, c <= N)
@@ -182,63 +186,67 @@ def _sympy_to_z3_rec(var_map, e):
 
     return rv
 
+def cull_pieces(I):
+    I_culled = PiecewiseExpression()
+    for p in I.pieces:
+        varlist = [N, r, c, k]
+        s = Solver()
+        for cs in p.P:
+            # print(cs)
 
-# var_list = x, y = symbols("x y")
-# sympy_exp = -x**2 + y + 1
-# z3_vars, z3_exp = sympy_to_z3(var_list, sympy_exp)
+            expr = sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1]
+            if isinstance(cs, Equality):
+                s.add(expr == 0)
+            elif isinstance(cs, StrictGreaterThan):
+                s.add(expr > 0)
+            elif isinstance(cs, StrictLessThan):
+                s.add(expr < 0)
+            elif isinstance(cs, LessThan):
+                s.add(expr <= 0)
+            elif isinstance(cs, GreaterThan):
+                s.add(expr >= 0)
+            else:
+                print('\tunrecognized comparator')
+                assert(False)
 
-# z3_x = z3_vars[0]
-# z3_y = z3_vars[1]
+        result = s.check()
 
-for p in I.pieces:
-    s = Solver()
-    for cs in p.P:
-        print(cs)
-        if isinstance(cs, Equality):
-            print('cs is equality!!!')
-            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] == 0)
-        elif isinstance(cs, StrictGreaterThan):
-            print('cs is strict gt')
-            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] > 0)
-        elif isinstance(cs, StrictLessThan):
-            print('cs is strict gt')
-            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] < 0)
-        elif isinstance(cs, LessThan):
-            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] <= 0)
-        elif isinstance(cs, GreaterThan):
-            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] >= 0)
+        if result == sat:
+            m = s.model()
+            print ("SAT: {}".format(m))
+            I_culled.add_piece(copy.deepcopy(p.f), copy.deepcopy(p.P))
         else:
-            print('\tunrecognized')
-            assert(False)
-            # s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] >= 0)
-# s.add(z3_exp == 0) # add a constraint with converted expression
-# s.add(z3_y >= 0) # add an extra constraint
+            print ("UNSAT")
 
-    result = s.check()
+    return I_culled
 
-    if result == sat:
-        m = s.model()
+print(cull_pieces(I))
 
-        # print ("SAT at x={}, y={}".format(m[z3_x], m[z3_y]))
-        print ("SAT: {}".format(m))
-    else:
-        print ("UNSAT")
+Il = I.subs(c, k)
+Ir = I.subs(r, k)
 
-# sympy_exp = -x**2 + y + 1
-# z3_vars, z3_exp = sympy_to_z3(var_list, sympy_exp)
 
-# z3_x = z3_vars[0]
-# z3_y = z3_vars[1]
 
-# s = Solver()
-# s.add(z3_exp == 0) # add a constraint with converted expression
-# s.add(z3_y >= 0) # add an extra constraint
+# print(Il)
+# print(Ir)
 
-# result = s.check()
+prod = pwmul(Il, Ir)
 
-# if result == sat:
-    # m = s.model()
+print('Prod')
+print(prod)
 
-    # print ("SAT at x={}, y={}".format(m[z3_x], m[z3_y]))
-# else:
-    # print ("UNSAT")
+print('Prod pieces:', len(prod.pieces))
+
+prod_culled = cull_pieces(prod)
+print('Culled prod')
+print(prod_culled)
+print('Prod culled pieces:', len(prod_culled.pieces))
+
+print('Adding context...')
+# prod.add_context([Eq(c, r), Eq(k, r)])
+prod.add_context([r > c])
+
+prod_culled = cull_pieces(prod)
+print('Culled prod')
+print(prod_culled)
+print('Prod culled pieces:', len(prod_culled.pieces))
