@@ -23,8 +23,10 @@ class Piece:
             syms.add(s)
         for cs in self.P:
             for cc in cs.free_symbols:
+                print(cc)
                 syms.add(cc)
         return syms
+
 
 class PiecewiseExpression:
 
@@ -35,6 +37,7 @@ class PiecewiseExpression:
     def free_symbols(self):
         syms = set()
         for p in self.pieces:
+            print(p)
             for s in p.free_symbols:
                 syms.add(s)
         return syms
@@ -328,4 +331,4 @@ def codegen(pwf, constant_values, variable_domains):
     return ss
 
 print('----- Codegen')
-print(codegen(p, [], []))
+print(codegen(matprod, [], []))
