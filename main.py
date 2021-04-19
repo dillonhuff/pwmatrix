@@ -227,6 +227,12 @@ def product(A, B):
         matrix_product.add_piece(rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
-matprod = product(I, I)
+# matprod = product(I, I)
+# print(matprod)
+
+Dense = PiecewiseExpression()
+Dense.add_piece(nsimplify(12), Bnds)
+
+matprod = product(I, Dense)
 print(matprod)
 
