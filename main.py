@@ -240,12 +240,17 @@ print('Prod culled pieces:', len(prod_culled.pieces))
 print('Adding context...')
 
 orders = [[r > c], [c > r], [Eq(c, r)]]
-prod.add_context([r > c, Eq(c, k)])
+constraints = [[Eq(k, c)], [Eq(k, r)]]
+for order in orders:
+    for cc in constraints:
+        print('------- Checking order:', order, 'with constraints:', cc)
+        pr = copy.deepcopy(prod)
+        pr.add_context(order + cc)
 
-prod_culled = cull_pieces(prod)
-print('Culled prod')
-print(prod_culled)
-print('Prod culled pieces:', len(prod_culled.pieces))
+        prod_culled = cull_pieces(pr)
+        print('Culled prod')
+        print(prod_culled)
+        print('Prod culled pieces:', len(prod_culled.pieces))
 
 # Now: Need to add possible order constraints
 # and then cull each sum.
