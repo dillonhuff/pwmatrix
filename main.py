@@ -194,23 +194,39 @@ from z3 import Solver, sat
 # z3_x = z3_vars[0]
 # z3_y = z3_vars[1]
 
-s = Solver()
 for p in I.pieces:
+    s = Solver()
     for cs in p.P:
         print(cs)
-        s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] >= 0)
+        if isinstance(cs, Equality):
+            print('cs is equality!!!')
+            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] == 0)
+        elif isinstance(cs, StrictGreaterThan):
+            print('cs is strict gt')
+            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] > 0)
+        elif isinstance(cs, StrictLessThan):
+            print('cs is strict gt')
+            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] < 0)
+        elif isinstance(cs, LessThan):
+            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] <= 0)
+        elif isinstance(cs, GreaterThan):
+            s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] >= 0)
+        else:
+            print('\tunrecognized')
+            assert(False)
+            # s.add(sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1] >= 0)
 # s.add(z3_exp == 0) # add a constraint with converted expression
 # s.add(z3_y >= 0) # add an extra constraint
 
-result = s.check()
+    result = s.check()
 
-if result == sat:
-    m = s.model()
+    if result == sat:
+        m = s.model()
 
-    # print ("SAT at x={}, y={}".format(m[z3_x], m[z3_y]))
-    print ("SAT: {}".format(m))
-else:
-    print ("UNSAT")
+        # print ("SAT at x={}, y={}".format(m[z3_x], m[z3_y]))
+        print ("SAT: {}".format(m))
+    else:
+        print ("UNSAT")
 
 # sympy_exp = -x**2 + y + 1
 # z3_vars, z3_exp = sympy_to_z3(var_list, sympy_exp)
