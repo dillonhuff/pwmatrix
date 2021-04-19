@@ -269,6 +269,7 @@ for order in orders:
         print('Culled prod')
         print(prod_culled)
         print('Prod culled pieces:', len(prod_culled.pieces))
+        assert(len(prod_culled.pieces) == 1)
 
 # Now: Need to add possible order constraints
 # and then cull each sum.
