@@ -50,6 +50,7 @@ class PiecewiseExpression:
                 cond = cond & cs
             print('cond = ', cond)
             symps.append((p.f, cond))
+        symps.append((0, True))
         return Piecewise(*symps)
 
 def compose_pointwise(op, f, g):
@@ -293,3 +294,6 @@ print(matprod)
 print('---pieces')
 for p in matprod.pieces:
     print(p)
+    print(ccode(p.f))
+    print()
+
