@@ -242,6 +242,7 @@ print('Adding context...')
 orders = [[[r], [c]], [[c], [r]], [[r, c]]]
 constraints = [[Eq(k, c)], [Eq(k, r)]]
 for order in orders:
+    print('####### Checking order')
     order_cs = []
     for gp in order:
         for i in gp:
@@ -250,7 +251,16 @@ for order in orders:
                     order_cs.append(Eq(i, j))
     for i in range(len(order) - 1):
         order_cs.append(order[i][0] < order[i + 1][0])
-    for cc in constraints:
+
+    k_ranges = []
+    # Points
+    for gp in order:
+        k_ranges.append([Eq(k, gp[0])])
+    for i in range(len(order) - 1):
+        kl = k >= order[i][0] + 1
+        ku = k < order[i + 1][0]
+        k_ranges.append([kl, ku])
+    for cc in k_ranges:
         print('------- Checking order:', order, 'with constraints:', cc)
         pr = copy.deepcopy(prod)
         pr.add_context(order_cs + cc)
