@@ -17,6 +17,17 @@ class Piece:
         return '({0} if {1})'.format(self.f, self.P)
 
     @property
+    def variables(self):
+        syms = set()
+        for s in self.f.variables:
+            syms.add(s)
+        for cs in self.P:
+            for cc in cs.variables:
+                print(cc)
+                syms.add(cc)
+        return syms
+
+    @property
     def free_symbols(self):
         syms = set()
         for s in self.f.free_symbols:
@@ -32,6 +43,15 @@ class PiecewiseExpression:
 
     def __init__(self):
         self.pieces = []
+
+    @property
+    def variables(self):
+        syms = set()
+        for p in self.pieces:
+            print(p)
+            for s in p.variables:
+                syms.add(s)
+        return syms
 
     @property
     def free_symbols(self):
