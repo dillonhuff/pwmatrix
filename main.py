@@ -287,7 +287,12 @@ Dense = PiecewiseExpression()
 f = Function("f")
 Dense.add_piece(nsimplify(f(r, c)), Bnds)
 
-matprod = product(I, Dense)
+Symmetric = PiecewiseExpression()
+Symmetric.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
+Symmetric.add_piece(nsimplify(f(c, r)), Bnds + [r > c])
+
+# matprod = product(I, Dense)
+matprod = product(Symmetric, Symmetric)
 print(matprod)
 
 print('---pieces')
