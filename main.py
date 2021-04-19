@@ -189,7 +189,11 @@ def _sympy_to_z3_rec(var_map, e):
 def cull_pieces(I):
     I_culled = PiecewiseExpression()
     for p in I.pieces:
-        varlist = [N, r, c, k]
+        varlist = []
+        for cs in p.P:
+            for sym in cs.free_symbols:
+                varlist.append(sym)
+        # [N, r, c, k]
         s = Solver()
         for cs in p.P:
             # print(cs)
@@ -256,7 +260,6 @@ for order in orders:
 
     k_ranges = []
     rc_sums = 0
-    # Points
     for gp in order:
         k_ranges.append([Eq(k, gp[0])])
     for i in range(len(order) - 1):
