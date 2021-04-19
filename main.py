@@ -277,16 +277,9 @@ for order in orders:
         ku = cc[0].rhs
         if len(cc) == 2:
             ku = cc[1].rhs
-        rc_sums = rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku))
+        rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
 
     matrix_product.add_piece(rc_sums, order_cs)
 
 print(matrix_product)
-# Now: Need to add possible order constraints
-# and then cull each sum.
-# There is another problem: I need to be able
-# to add contexts to ensure that functions
-# always evaluate. That way I can get rid
-# of the implicity "otherwise undefined"
-# condition in piecewise functions.
 
