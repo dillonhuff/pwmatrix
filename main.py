@@ -357,6 +357,25 @@ def product(A, B):
 
     prod = pwmul(Il, Ir)
 
+    all_constraints = []
+    for p in prod.pieces:
+        for constraint in p.P:
+            all_constraints.append(constraint)
+    print(all_constraints)
+    # TODO: Actually use this set of constraints
+    # to compute the terms that need to be ordered
+    tms = []
+    for constraint in all_constraints:
+        expr = constraint.lhs - constraint.rhs
+        if expr.coeff(k) == 0:
+            continue
+        no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
+        tms.append(no_k)
+    print(tms)
+    assert(False)
+
+
+    # TODO: Should actually be computed from the set of constraints
     terms_to_order = [r, c]
 
     orders = enumerate_orders(terms_to_order)
@@ -398,7 +417,6 @@ def product(A, B):
             ku = cc[0].rhs
             if len(cc) == 2:
                 ku = cc[1].rhs
-            # TODO: Should have the sum on the outside
             rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
             sigma_terms.append((prod_culled, (k, kl, ku)))
 
@@ -422,7 +440,7 @@ UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
-matprod = sym_product(UpperTriangular, UpperTriangular)
+# matprod = sym_product(UpperTriangular, UpperTriangular)
 
 matprod = product(UpperTriangular, UpperTriangular)
 print(matprod)
