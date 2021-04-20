@@ -179,11 +179,9 @@ def cull_pieces(I):
         for cs in p.P:
             for sym in cs.free_symbols:
                 varlist.append(sym)
-        # [N, r, c, k]
         s = Solver()
+        print('checking: ', p.P)
         for cs in p.P:
-            # print(cs)
-
             expr = sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1]
             if isinstance(cs, Equality):
                 s.add(expr == 0)
@@ -326,6 +324,7 @@ def product(A, B):
         # Compute the sum terms in k
         rc_sums = 0
         sigma_terms = []
+        order_is_consistent = False
         for cc in k_ranges:
             print('------- Checking order:', order, 'with constraints:', cc)
             pr = copy.deepcopy(prod)
@@ -343,13 +342,15 @@ def product(A, B):
                     ku = cc[1].rhs
                 rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
                 sigma_terms.append((prod_culled, (k, kl, ku)))
+                order_is_consistent = True
 
         print('\nsigma terms:', sigma_terms)
         rcs = 0
         for s in sigma_terms:
             rcs = rcs + Sum(s[0].to_sympy(), s[1]).doit()
         print(rcs)
-        matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
+        if order_is_consistent:
+            matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
     return matrix_product
 
 Dense = PiecewiseExpression()
