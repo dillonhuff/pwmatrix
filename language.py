@@ -1,6 +1,35 @@
 from sympy import *
 import copy
 
+def place_t_in_order(t, term_order):
+    ords = []
+    # Create a group where t is in each equivalence class
+    for i in range(len(term_order)):
+        cpyord = copy.deepcopy(term_order)
+        cpyord[i].append(t)
+        ords.append(cpyord)
+
+    # Create a group where t is between each equivalence class
+    for i in range(len(term_order) + 1):
+        cpyord = copy.deepcopy(term_order)
+        cpyord.insert(i, [t])
+        ords.append(cpyord)
+    return ords
+
+def enumerate_orders(terms):
+    if len(terms) == 0:
+        return []
+    if len(terms) == 1:
+        return [[[terms[0]]]]
+
+    orders = []
+    t = terms[0]
+    other_ords = enumerate_orders(terms[1:])
+    for other_ord in other_ords:
+        sub_ords = place_t_in_order(t, other_ord)
+        orders = orders + sub_ords
+
+    return orders
 def substitute(target, value, expr):
     return expr.subs(target, value)
 
@@ -200,9 +229,44 @@ print(left_reduce(App(ss, [7])))
 res = left_reduce(App(ss, [7]))
 print('res:',res)
 
-lifted = PiecewiseExpression()
-lifted.add_piece(res, [True])
-print('lifted:', lifted)
+# lifted = PiecewiseExpression()
+# lifted.add_piece(res, [True])
+# print('lifted:', lifted)
 
 ss = App(ConcreteSum(), [1, 7, f])
 print(ss)
+
+def concretify_sum(symsum):
+    assert(isinstance(symsum, App))
+    assert(isinstance(symsum.f, SymSum))
+    assert(len(symsum.vs) == 2)
+
+    domain = symsum.vs[0]
+    assert(isinstance(domain, Set))
+    assert(len(domain.vs) == 1)
+
+    k = domain.vs[0]
+
+    all_constraints = copy.deepcopy(domain.constraints)
+    tms = set()
+    for constraint in all_constraints:
+        expr = constraint.lhs - constraint.rhs
+        if expr.coeff(k) == 0:
+            continue
+        no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
+        tms.add(no_k)
+
+    terms_to_order = list(tms)
+    orders = enumerate_orders(terms_to_order)
+
+    print(tms)
+    print(orders)
+
+    sums_assuming_order = PiecewiseExpression()
+    for order in orders:
+        sums_assuming_order.add_piece(symsum, order)
+
+    print(sums_assuming_order)
+
+
+concretify_sum(res)

@@ -237,35 +237,6 @@ print(I)
 
 print(cull_pieces(I))
 
-def place_t_in_order(t, term_order):
-    ords = []
-    # Create a group where t is in each equivalence class
-    for i in range(len(term_order)):
-        cpyord = copy.deepcopy(term_order)
-        cpyord[i].append(t)
-        ords.append(cpyord)
-
-    # Create a group where t is between each equivalence class
-    for i in range(len(term_order) + 1):
-        cpyord = copy.deepcopy(term_order)
-        cpyord.insert(i, [t])
-        ords.append(cpyord)
-    return ords
-
-def enumerate_orders(terms):
-    if len(terms) == 0:
-        return []
-    if len(terms) == 1:
-        return [[[terms[0]]]]
-
-    orders = []
-    t = terms[0]
-    other_ords = enumerate_orders(terms[1:])
-    for other_ord in other_ords:
-        sub_ords = place_t_in_order(t, other_ord)
-        orders = orders + sub_ords
-
-    return orders
 
 print(enumerate_orders([r, c]))
 assert(len(enumerate_orders([r, c])) == 3)
