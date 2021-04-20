@@ -25,11 +25,17 @@ class App:
         self.f = f
         self.vs = vs
 
+    def __repr__(self):
+        return '{0}{1}'.format(self.f, self.vs)
+
 class SymSum:
 
     def __init__(self, domain, f):
         self.domain = domain
         self.f = f
+
+    def __repr__(self):
+        return '\u2211' + '{' + str(self.domain) + '}' + '({0})'.format(self.f)
 
 class ConcreteSum:
 
@@ -45,9 +51,15 @@ class Op:
         self.name = name
         self.args = args
 
-i0, j0 = symbols("i0 j0")
+i0, j0, t= symbols("i0 j0 t")
 
 le = Lambda([i0], Set([j0], [1 <= i0, i0 <= j0]))
 print(le)
 
+f = Lambda([t], t)
+print(f)
 
+i = symbols("i")
+ss = Lambda([i], SymSum(App(le, [i]), f))
+
+print(ss)
