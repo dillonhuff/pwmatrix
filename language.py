@@ -264,7 +264,19 @@ def concretify_sum(symsum):
 
     sums_assuming_order = PiecewiseExpression()
     for order in orders:
-        sums_assuming_order.add_piece(symsum, order)
+        concrete_sums = []
+        ordera = copy.deepcopy(order)
+        ordera.insert(0, ['-inf'])
+        ordera.append(['inf'])
+        for i in range(len(ordera) - 1):
+            current = ordera[i][0]
+            next_g = ordera[i+1][0]
+            concrete_sums.append(App(ConcreteSum(), [current, App('-', [next_g, 1]), symsum.vs[1]]))
+            concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
+            print('sums:', concrete_sums)
+        concrete_sum = App('+', concrete_sums)
+        # sums_assuming_order.add_piece(symsum, order)
+        sums_assuming_order.add_piece(concrete_sum, order)
 
     print(sums_assuming_order)
 
