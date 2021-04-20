@@ -364,13 +364,13 @@ def product(A, B):
     print(all_constraints)
     # TODO: Actually use this set of constraints
     # to compute the terms that need to be ordered
-    tms = []
+    tms = set()
     for constraint in all_constraints:
         expr = constraint.lhs - constraint.rhs
         if expr.coeff(k) == 0:
             continue
         no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
-        tms.append(no_k)
+        tms.add(no_k)
     print(tms)
     assert(False)
 
