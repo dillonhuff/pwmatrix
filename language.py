@@ -88,6 +88,12 @@ def beta_reduce(expr):
     else:
         return expr
 
+def left_reduce(expr):
+    fresh = beta_reduce(expr)
+    if isinstance(fresh, App):
+        fresh = App(left_reduce(fresh.f), list(map(lambda v: left_reduce(v), fresh.vs)))
+    return fresh
+
 i0, j0, t = symbols("i0 j0 t")
 
 le = Lambda([i0], Set([j0], [1 <= j0, j0 <= i0]))
@@ -102,3 +108,5 @@ ss = Lambda([i], App(SymSum(), [App(le, [i]), f]))
 print(ss)
 
 print(beta_reduce(App(ss, [7])))
+
+print(left_reduce(App(ss, [7])))
