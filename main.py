@@ -383,3 +383,4 @@ def codegen(pwf, constant_values, variable_domains):
 
 print('----- Codegen')
 print(codegen(matprod, [], []))
+

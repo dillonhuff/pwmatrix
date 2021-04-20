@@ -58,11 +58,14 @@ class SymSum:
 
 class ConcreteSum:
 
-    def __init__(self, k, start, end, f):
-        self.k = k
-        self.start = start
-        self.end = end
-        self.f = f
+    def __init__(self):
+        None
+
+    def __repr__(self):
+        return '\u2211'
+
+    def subs(self, target, value):
+        return self
 
 class Op:
 
@@ -200,3 +203,6 @@ print('res:',res)
 lifted = PiecewiseExpression()
 lifted.add_piece(res, [True])
 print('lifted:', lifted)
+
+ss = App(ConcreteSum(), [1, 7, f])
+print(ss)
