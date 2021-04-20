@@ -294,8 +294,6 @@ def sym_product(A, B):
     print('culled')
     print(culled_sums)
 
-    # res.add_piece(SymSum(prod, k, [1 <= k, k <= N]), [True])
-
     # print(res)
     assert(False)
 
