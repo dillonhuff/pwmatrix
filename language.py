@@ -70,6 +70,89 @@ class Op:
         self.name = name
         self.args = args
 
+class Piece:
+
+    def __init__(self, f, P):
+        self.f = f
+        self.P = P
+
+    def __repr__(self):
+        return '({0} if {1})'.format(self.f, self.P)
+
+    @property
+    def variables(self):
+        syms = set()
+        for s in self.f.variables:
+            syms.add(s)
+        for cs in self.P:
+            for cc in cs.variables:
+                print(cc)
+                syms.add(cc)
+        return syms
+
+    @property
+    def free_symbols(self):
+        syms = set()
+        for s in self.f.free_symbols:
+            syms.add(s)
+        for cs in self.P:
+            for cc in cs.free_symbols:
+                print(cc)
+                syms.add(cc)
+        return syms
+class PiecewiseExpression:
+
+    def __init__(self):
+        self.pieces = []
+
+    @property
+    def variables(self):
+        syms = set()
+        for p in self.pieces:
+            print(p)
+            for s in p.variables:
+                syms.add(s)
+        return syms
+
+    @property
+    def free_symbols(self):
+        syms = set()
+        for p in self.pieces:
+            print(p)
+            for s in p.free_symbols:
+                syms.add(s)
+        return syms
+
+    def add_context(self, c):
+        for p in self.pieces:
+            p.P = p.P + c
+
+    def subs(self, x, y):
+        rp = copy.deepcopy(self)
+        for p in rp.pieces:
+            p.f = p.f.subs(x, y)
+            cs = []
+            for cc in p.P:
+                cs.append(cc.subs(x, y))
+            p.P = cs
+        return rp
+
+    def add_piece(self, f, p):
+        self.pieces.append(Piece(f, p))
+
+    def __repr__(self):
+        ss = '[{0}]'.format(self.pieces)
+        return ss
+
+    def to_sympy(self):
+        symps = []
+        for p in self.pieces:
+            cond = sympify(True)
+            for cs in p.P:
+                cond = cond & cs
+            print('cond = ', cond)
+            symps.append((p.f, cond))
+        return Piecewise(*symps)
 def beta_reduce(expr):
     if isinstance(expr, App):
         print('Beta reducing {0}'.format(expr))
@@ -110,3 +193,10 @@ print(ss)
 print(beta_reduce(App(ss, [7])))
 
 print(left_reduce(App(ss, [7])))
+
+res = left_reduce(App(ss, [7]))
+print('res:',res)
+
+lifted = PiecewiseExpression()
+lifted.add_piece(res, [True])
+print('lifted:', lifted)
