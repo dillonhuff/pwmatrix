@@ -279,6 +279,12 @@ def concretify_sum(symsum):
         sums_assuming_order.add_piece(concrete_sum, order)
 
     print(sums_assuming_order)
+    return sums_assuming_order
 
 
-concretify_sum(res)
+fss = concretify_sum(res)
+
+print('Concrete')
+for p in fss.pieces:
+    print(p)
+    print()
