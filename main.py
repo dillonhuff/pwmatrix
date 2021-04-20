@@ -7,6 +7,16 @@ from z3 import Int, Real, Sqrt
 from sympy.core import Mul, Expr, Add, Pow, Symbol, Number
 import islpy as isl
 
+class SymSum:
+
+    def __init__(self, f, k, dom):
+        self.f = f
+        self.k = k
+        self.dom = dom
+
+    def __repr__(self):
+        return 'SymSum({0}, {1}, {2})'.format(self.f, self.k, self.dom)
+
 class Piece:
 
     def __init__(self, f, P):
@@ -262,6 +272,86 @@ def enumerate_orders(terms):
 print(enumerate_orders([r, c]))
 assert(len(enumerate_orders([r, c])) == 3)
 
+def sym_product(A, B):
+    r, c, k = symbols("r c k")
+    Il = A.subs(c, k)
+    Ir = B.subs(r, k)
+
+    prod = pwmul(Il, Ir)
+    print(prod)
+
+
+    sums = []
+    for p in prod.pieces:
+        sums.append(SymSum(p.f, k, p.P + [1 <= k, k <= N]))
+    print(sums)
+
+    culled_sums = []
+    for s in sums:
+        if s.f != 0:
+            culled_sums.append(s)
+
+    print('culled')
+    print(culled_sums)
+
+    # res.add_piece(SymSum(prod, k, [1 <= k, k <= N]), [True])
+
+    # print(res)
+    assert(False)
+
+    terms_to_order = [r, c]
+
+    orders = enumerate_orders(terms_to_order)
+
+    matrix_product = PiecewiseExpression()
+    for order in orders:
+        print('####### Checking order')
+        order_cs = []
+        for gp in order:
+            for i in gp:
+                for j in gp:
+                    if i != j:
+                        order_cs.append(Eq(i, j))
+        for i in range(len(order) - 1):
+            order_cs.append(order[i][0] < order[i + 1][0])
+
+        k_ranges = []
+        for gp in order:
+            k_ranges.append([Eq(k, gp[0])])
+        for i in range(len(order) - 1):
+            kl = k >= order[i][0] + 1
+            ku = k < order[i + 1][0]
+            k_ranges.append([kl, ku])
+
+        # Compute the sum terms in k
+        rc_sums = 0
+        sigma_terms = []
+        for cc in k_ranges:
+            print('------- Checking order:', order, 'with constraints:', cc)
+            pr = copy.deepcopy(prod)
+            pr.add_context(order_cs + cc)
+
+            prod_culled = cull_pieces(pr)
+            print('Culled prod')
+            print(prod_culled)
+            print('Prod culled pieces:', len(prod_culled.pieces))
+            assert(len(prod_culled.pieces) == 1)
+            kl = cc[0].rhs
+            ku = cc[0].rhs
+            if len(cc) == 2:
+                ku = cc[1].rhs
+            # TODO: Should have the sum on the outside
+            rc_sums = simplify(rc_sums + Sum(prod_culled.pieces[0].f, (k, kl, ku)))
+            sigma_terms.append((prod_culled, (k, kl, ku)))
+
+        print('\nsigma terms:', sigma_terms)
+        rcs = 0
+        for s in sigma_terms:
+            rcs = rcs + Sum(s[0].to_sympy(), s[1]).doit()
+        print(rcs)
+        matrix_product.add_piece(rcs, order_cs) #rc_sums, order_cs + prod_culled.pieces[0].P)
+    return matrix_product
+
 def product(A, B):
     r, c, k = symbols("r c k")
     Il = A.subs(c, k)
@@ -272,7 +362,6 @@ def product(A, B):
     terms_to_order = [r, c]
 
     orders = enumerate_orders(terms_to_order)
-    # constraints = [[Eq(k, c)], [Eq(k, r)]]
 
     matrix_product = PiecewiseExpression()
     for order in orders:
@@ -335,7 +424,8 @@ UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
-# matprod = product(I, Dense)
+matprod = sym_product(UpperTriangular, UpperTriangular)
+
 matprod = product(UpperTriangular, UpperTriangular)
 print(matprod)
 
