@@ -463,9 +463,10 @@ print('res:',res)
 r = concretify_sum(res)
 print(r)
 
+k0 = symbols("k0")
 l = symbols("l")
-le = Lambda([i0], Set([j0], [l <= j0, j0 <= i0]))
-ss = Lambda([i, l], App(SymSum(), [App(le, [i]), f]))
+le = Lambda([i0, k0], Set([j0], [k0 <= j0, j0 <= i0]))
+ss = Lambda([i, l], App(SymSum(), [App(le, [i, l]), f]))
 
 print('lam:', ss)
 
