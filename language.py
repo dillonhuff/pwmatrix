@@ -69,6 +69,12 @@ class App:
         self.vs = vs
 
     def __repr__(self):
+        if self.f == '+':
+            return '({0})'.format(' + '.join(list(map(lambda x: str(x), self.vs))))
+
+        if self.f == '-' and len(self.vs) == 2:
+            return '({0} - {1})'.format(self.vs[0], self.vs[1])
+
         return '({0}{1})'.format(self.f, self.vs)
 
     def subs(self, target, value):
@@ -236,6 +242,18 @@ print('res:',res)
 ss = App(ConcreteSum(), [1, 7, f])
 print(ss)
 
+def order_to_constraints(order):
+    k_ranges = []
+    for gp in order:
+        for k in gp:
+            for l in gp:
+                k_ranges.append(Eq(k, l))
+    for i in range(len(order) - 1):
+        prevg = order[i][0]
+        nextg = order[i + 1][0]
+        k_ranges.append(prevg < nextg)
+    return k_ranges
+
 def concretify_sum(symsum):
     assert(isinstance(symsum, App))
     assert(isinstance(symsum.f, SymSum))
@@ -266,17 +284,20 @@ def concretify_sum(symsum):
     for order in orders:
         concrete_sums = []
         ordera = copy.deepcopy(order)
-        ordera.insert(0, ['-inf'])
-        ordera.append(['inf'])
+        # ordera.insert(0, ['-inf'])
+        # ordera.append(['inf'])
         for i in range(len(ordera) - 1):
             current = ordera[i][0]
             next_g = ordera[i+1][0]
             concrete_sums.append(App(ConcreteSum(), [current, App('-', [next_g, 1]), symsum.vs[1]]))
-            concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
-            print('sums:', concrete_sums)
+
+        for i in range(len(ordera)):
+            next_g = ordera[i][0]
+            # concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
+            concrete_sums.append(beta_reduce(App(symsum.vs[1], [next_g])))
         concrete_sum = App('+', concrete_sums)
         # sums_assuming_order.add_piece(symsum, order)
-        sums_assuming_order.add_piece(concrete_sum, order)
+        sums_assuming_order.add_piece(concrete_sum, order_to_constraints(order))
 
     print(sums_assuming_order)
     return sums_assuming_order
