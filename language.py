@@ -1,6 +1,15 @@
 from sympy import *
 import copy
 
+def compose_pointwise(op, f, g):
+    composed = PiecewiseExpression()
+    for fp in f.pieces:
+        for gp in g.pieces:
+            composed.pieces.append(Piece(op(fp.f, gp.f), fp.P + gp.P))
+    return composed
+
+def pwmul(a, b):
+    return compose_pointwise(lambda x, y: x*y, a, b)
 def scale(scalar, cs):
     is_negative = scalar < 0
     scaled_lhs = scalar*cs.lhs
@@ -218,15 +227,17 @@ def beta_reduce(expr):
         f = expr.f
         vs = expr.vs
         if isinstance(f, Lambda):
-            print('Beta reducing lambda {0}'.format(f))
-            fresh = copy.deepcopy(f)
+            # print('Beta reducing lambda {0}'.format(f))
+            fresh = copy.deepcopy(f.f)
             for i in range(min(len(vs), len(f.vs))):
                 var = f.vs[i]
                 value = vs[i]
-                fresh = substitute(var, value, f.f)
+                print('\treplacing {0} with {1} in {2}'.format(var, value, fresh))
+                fresh = substitute(var, value, fresh)
             if len(vs) == len(f.vs):
                 return fresh
             else:
+                assert(False)
                 return Lambda(f.vs[min(len(vs), len(f.vs)):], fresh)
         else:
             return expr
@@ -258,6 +269,7 @@ print(left_reduce(App(ss, [7])))
 
 res = left_reduce(App(ss, [7]))
 print('res:',res)
+# assert(False)
 
 # lifted = PiecewiseExpression()
 # lifted.add_piece(res, [True])
@@ -321,6 +333,8 @@ def separate_constraints(var, constraints):
     print('scaled', scaled_coeffs)
     isolated = set()
     for cs in scaled_coeffs:
+        if cs == True:
+            continue
         assert(cs.lhs.coeff(var) == 1 and cs.rhs.coeff(var) == 0)
         if isinstance(cs, Equality):
             isolated.add(Eq(cs.lhs - var, cs.rhs - var))
@@ -463,6 +477,7 @@ print('lam:', ss)
 
 res = left_reduce(App(ss, ['i']))
 print('res:',res)
+# assert(false)
 
 r = concretify_sum(res)
 print(r)
@@ -479,4 +494,50 @@ res = left_reduce(App(ss, [i, l]))
 print('res:',res)
 
 r = concretify_sum(res)
-print(r)
+print('concrete results', r)
+
+r, c = symbols("r c")
+N = symbols("N")
+
+def product(A, B):
+    r, c, k = symbols("r c k")
+    Il = A.subs(c, k)
+    Ir = B.subs(r, k)
+
+    prod = pwmul(Il, Ir)
+
+    ss = Set([k], [1 <= k, k <= N])
+    return App(SymSum(), [ss, prod])
+
+Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
+I = PiecewiseExpression()
+I.add_piece(nsimplify(0), Bnds + [r < c])
+I.add_piece(nsimplify(0), Bnds + [r > c])
+I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+
+print('I:', I)
+ip = product(I, I)
+print(ip)
+
+def separate_sum_of_pieces(ss):
+    assert(isinstance(ss, App))
+    assert(isinstance(ss.f, SymSum))
+    domain = ss.vs[0]
+    func = ss.vs[1]
+    if not isinstance(func, PiecewiseExpression):
+        return ss
+    print(ss, 'is a sum over a piecewise function')
+
+    print('dom:', domain)
+    sepsum = []
+    for p in func.pieces:
+        if p.f != 0:
+            sepsum.append(App(SymSum(), [Set(domain.vs, list(domain.constraints) + list(p.P)), p.f]))
+    if len(sepsum) == 1:
+        return sepsum[0]
+    return App('+', sepsum)
+
+sepsum = separate_sum_of_pieces(ip)
+print(sepsum)
+
+print(concretify_sum(sepsum))
