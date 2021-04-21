@@ -254,6 +254,27 @@ def order_to_constraints(order):
         k_ranges.append(prevg < nextg)
     return k_ranges
 
+def separate_constraints(var, constraints):
+    normalized = set()
+    for cs in constraints:
+        if isinstance(cs, Equality):
+            normalized.add(Eq(cs.lhs, cs.rhs))
+        elif isinstance(cs, StrictGreaterThan):
+            normalized.add(cs.lhs >= cs.rhs + 1)
+        elif isinstance(cs, StrictLessThan):
+            normalized.add(cs.lhs >= cs.rhs + 1)
+        elif isinstance(cs, LessThan):
+            normalized.add(cs)
+        elif isinstance(cs, GreaterThan):
+            normalized.add(cs)
+        else:
+            print('\tunrecognized comparator')
+            assert(False)
+
+    print(normalized)
+    assert(False)
+    return equalities, upper_bounds, lower_bounds
+
 def concretify_sum(symsum):
     assert(isinstance(symsum, App))
     assert(isinstance(symsum.f, SymSum))
@@ -266,6 +287,7 @@ def concretify_sum(symsum):
     k = domain.vs[0]
 
     all_constraints = copy.deepcopy(domain.constraints)
+    equalities, upper_bounds, lower_bounds = separate_constraints(k, all_constraints)
     tms = set()
     for constraint in all_constraints:
         expr = constraint.lhs - constraint.rhs
@@ -273,6 +295,9 @@ def concretify_sum(symsum):
             continue
         no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
         tms.add(no_k)
+
+    print(all_constraints)
+    assert(False)
 
     terms_to_order = list(tms)
     orders = enumerate_orders(terms_to_order)
