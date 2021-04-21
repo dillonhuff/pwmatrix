@@ -381,7 +381,7 @@ def concretify_sum(symsum):
             u_constraints = []
             for k in upper_bounds:
                 u_constraints.append(k.lhs >= u.lhs)
-            piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints)
+            piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
 
     print(piecewise_sums)
 
@@ -442,3 +442,37 @@ print('Concrete')
 for p in fss.pieces:
     print(p)
     print()
+
+i0, j0, t = symbols("i0 j0 t")
+
+le = Lambda([i0], Set([j0], [1 <= j0, j0 <= i0]))
+print(le)
+
+f = Lambda([t], t)
+print(f)
+
+i = symbols("i")
+ss = Lambda([i], App(SymSum(), [App(le, [i]), f]))
+
+print('lam:', ss)
+
+
+res = left_reduce(App(ss, ['i']))
+print('res:',res)
+
+r = concretify_sum(res)
+print(r)
+
+j = symbols("j")
+jk = symbols("jk")
+le = Lambda([i0], Set([j0], [jk <= j0, j0 <= i0]))
+ss = Lambda([i, j], App(SymSum(), [App(le, [i]), f]))
+
+print('lam:', ss)
+
+
+res = left_reduce(App(ss, ['i']))
+print('res:',res)
+
+r = concretify_sum(res)
+print(r)
