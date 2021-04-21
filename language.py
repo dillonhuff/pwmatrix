@@ -372,10 +372,16 @@ def concretify_sum(symsum):
     # TODO: Check auxiliary constraints as well
     assert(len(equalities) == 0)
 
-    piecewise_sums = []
+    piecewise_sums = PiecewiseExpression()
     for l in lower_bounds:
+        l_constraints = []
+        for k in lower_bounds:
+            l_constraints.append(k.lhs <= l.lhs)
         for u in upper_bounds:
-            piecewise_sums.append(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]))
+            u_constraints = []
+            for k in upper_bounds:
+                u_constraints.append(k.lhs >= u.lhs)
+            piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints)
 
     print(piecewise_sums)
 
