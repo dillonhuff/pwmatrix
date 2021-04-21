@@ -312,9 +312,23 @@ def separate_constraints(var, constraints):
 
     scaled_coeffs = set()
     for cs in var_rhs:
-        scaled_coeffs.add(scale(cs.rhs.coeff(var), cs))
+        scaled_coeffs.add(scale(cs.lhs.coeff(var), cs))
 
     print('scaled', scaled_coeffs)
+    isolated = set()
+    for cs in scaled_coeffs:
+        assert(cs.lhs.coeff(var) == 1 and cs.rhs.coeff(var) == 0)
+        if isinstance(cs, Equality):
+            isolated.add(Eq(cs.lhs - var, cs.rhs - var))
+        elif isinstance(cs, LessThan):
+            isolated.add((cs.lhs - var <= cs.rhs - var))
+        elif isinstance(cs, GreaterThan):
+            isolated.add((cs.lhs - var >= cs.rhs - var))
+        else:
+            print('\tunrecognized comparator')
+            assert(False)
+
+    print(isolated)
     assert(False)
 
     equalities = []
