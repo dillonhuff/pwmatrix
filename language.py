@@ -353,7 +353,7 @@ def separate_constraints(var, constraints):
 
     print(reisolated)
 
-    auxiliary = [True]
+    auxiliary = [sympify(True)]
     pre_equalities = []
     upper_bounds = []
     lower_bounds = []
@@ -562,5 +562,21 @@ def separate_sum_of_pieces(ss):
 
 sepsum = separate_sum_of_pieces(ip)
 print(sepsum)
-
 print(concretify_sum(sepsum))
+
+
+f = Function("f")
+UpperTriangular = PiecewiseExpression()
+UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
+UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
+
+ip = product(UpperTriangular, UpperTriangular)
+sepsum = separate_sum_of_pieces(ip)
+print(sepsum)
+
+simplified = concretify_sum(sepsum)
+for p in simplified.pieces:
+    for cs in p.P:
+        print(cs.doit())
+print(simplified)
+
