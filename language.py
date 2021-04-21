@@ -329,6 +329,11 @@ def separate_constraints(var, constraints):
             assert(False)
 
     print(isolated)
+    reisolated = set()
+    for cs in isolated:
+        reisolated.add(scale(-1, cs))
+
+    print(reisolated)
     assert(False)
 
     equalities = []
