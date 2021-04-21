@@ -274,7 +274,6 @@ def order_to_constraints(order):
         k_ranges.append(prevg < nextg)
     return k_ranges
 
-# TODO: Add auxiliary constraints 
 def separate_constraints(var, constraints):
     normalized = set()
     for cs in constraints:
@@ -336,6 +335,7 @@ def separate_constraints(var, constraints):
 
     print(reisolated)
 
+    auxiliary = [True]
     equalities = []
     upper_bounds = []
     lower_bounds = []
@@ -350,7 +350,7 @@ def separate_constraints(var, constraints):
         else:
             print('\tunrecognized comparator')
             assert(False)
-    return equalities, upper_bounds, lower_bounds
+    return equalities, upper_bounds, lower_bounds, auxiliary
 
 def concretify_sum(symsum):
     assert(isinstance(symsum, App))
@@ -364,7 +364,7 @@ def concretify_sum(symsum):
     k = domain.vs[0]
 
     all_constraints = copy.deepcopy(domain.constraints)
-    equalities, upper_bounds, lower_bounds = separate_constraints(k, all_constraints)
+    equalities, upper_bounds, lower_bounds, auxiliary_constraints = separate_constraints(k, all_constraints)
     print('eq:', equalities)
     print('ub:', upper_bounds)
     print('lb:', lower_bounds)
@@ -385,7 +385,10 @@ def concretify_sum(symsum):
 
     print(piecewise_sums)
 
-    return piecewise_sums
+    wrapper = PiecewiseExpression()
+    wrapper.add_piece(piecewise_sums, auxiliary_constraints)
+
+    return wrapper
 
     # assert(False)
 
