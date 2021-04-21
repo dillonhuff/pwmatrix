@@ -211,6 +211,7 @@ class PiecewiseExpression:
             print('cond = ', cond)
             symps.append((p.f, cond))
         return Piecewise(*symps)
+
 def beta_reduce(expr):
     if isinstance(expr, App):
         print('Beta reducing {0}'.format(expr))
@@ -223,7 +224,10 @@ def beta_reduce(expr):
                 var = f.vs[i]
                 value = vs[i]
                 fresh = substitute(var, value, f.f)
-            return fresh
+            if len(vs) == len(f.vs):
+                return fresh
+            else:
+                return Lambda(f.vs[min(len(vs), len(f.vs)):], fresh)
         else:
             return expr
     else:
@@ -471,7 +475,7 @@ ss = Lambda([i, l], App(SymSum(), [App(le, [i, l]), f]))
 print('lam:', ss)
 
 
-res = left_reduce(App(ss, ['i']))
+res = left_reduce(App(ss, [i, l]))
 print('res:',res)
 
 r = concretify_sum(res)
