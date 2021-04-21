@@ -258,11 +258,44 @@ def separate_constraints(var, constraints):
     normalized = set()
     for cs in constraints:
         if isinstance(cs, Equality):
-            normalized.add(Eq(cs.lhs, cs.rhs))
+            normalized.add(Eq(cs.lhs - cs.rhs, 0))
         elif isinstance(cs, StrictGreaterThan):
-            normalized.add(cs.lhs >= cs.rhs + 1)
+            normalized.add(cs.lhs - cs.rhs - 1 >= 0)
         elif isinstance(cs, StrictLessThan):
-            normalized.add(cs.lhs >= cs.rhs + 1)
+            normalized.add(cs.lhs - cs.rhs - 1 <= 0)
+        elif isinstance(cs, LessThan):
+            normalized.add(cs.lhs - cs.rhs <= 0)
+        elif isinstance(cs, GreaterThan):
+            normalized.add(cs.lhs - cs.rhs >= 0)
+        else:
+            print('\tunrecognized comparator')
+            assert(False)
+
+    print(normalized)
+    var_rhs = set()
+    for cs in normalized:
+        expr = cs.lhs - cs.rhs
+        no_var = -1*expr.coeff(var)*(expr + -1*expr.coeff(var)*var)
+        print(no_var)
+        if isinstance(cs, Equality):
+            var_rhs.add(Eq(no_var, var))
+        elif isinstance(cs, LessThan):
+            var_rhs.add(Eq(no_var, var))
+        elif isinstance(cs, GreaterThan):
+            var_rhs.add(Eq(no_var, var))
+        else:
+            print('\tunrecognized comparator')
+            assert(False)
+
+    print(var_rhs)
+    assert(False)
+
+    equalities = []
+    upper_bounds = []
+    lower_bounds = []
+    for cs in normalized:
+        if isinstance(cs, Equality):
+            normalized.add(Eq(cs.lhs, cs.rhs))
         elif isinstance(cs, LessThan):
             normalized.add(cs)
         elif isinstance(cs, GreaterThan):
@@ -270,8 +303,6 @@ def separate_constraints(var, constraints):
         else:
             print('\tunrecognized comparator')
             assert(False)
-
-    print(normalized)
     assert(False)
     return equalities, upper_bounds, lower_bounds
 
