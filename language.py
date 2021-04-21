@@ -1,6 +1,26 @@
 from sympy import *
 import copy
 
+def scale(scalar, cs):
+    is_negative = scalar < 0
+    scaled_lhs = scalar*cs.lhs
+    scaled_rhs = scalar*cs.rhs
+    if isinstance(cs, Equality):
+        return Eq(scaled_lhs, scaled_rhs)
+    elif isinstance(cs, LessThan):
+        if is_negative:
+            return scaled_lhs >= scaled_rhs
+        else:
+            return scaled_lhs <= scaled_rhs
+    elif isinstance(cs, GreaterThan):
+        if is_negative:
+            return scaled_lhs <= scaled_rhs
+        else:
+            return scaled_lhs >= scaled_rhs
+    else:
+        print('\tunrecognized comparator')
+        assert(False)
+
 def place_t_in_order(t, term_order):
     ords = []
     # Create a group where t is in each equivalence class
@@ -280,14 +300,20 @@ def separate_constraints(var, constraints):
         if isinstance(cs, Equality):
             var_rhs.add(Eq(no_var, var))
         elif isinstance(cs, LessThan):
-            var_rhs.add(Eq(no_var, var))
+            var_rhs.add((no_var <= var))
         elif isinstance(cs, GreaterThan):
-            var_rhs.add(Eq(no_var, var))
+            var_rhs.add((no_var >= var))
         else:
             print('\tunrecognized comparator')
             assert(False)
 
-    print(var_rhs)
+    print('var rhs:', var_rhs)
+
+    scaled_coeffs = set()
+    for cs in var_rhs:
+        scaled_coeffs.add(scale(cs.rhs.coeff(var), cs))
+
+    print('scaled', scaled_coeffs)
     assert(False)
 
     equalities = []
