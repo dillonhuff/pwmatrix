@@ -292,17 +292,18 @@ def separate_constraints(var, constraints):
             assert(False)
 
     print(normalized)
+
     var_rhs = set()
     for cs in normalized:
         expr = cs.lhs - cs.rhs
-        no_var = -1*expr.coeff(var)*(expr + -1*expr.coeff(var)*var)
-        print(no_var)
+        # no_var = -1*expr.coeff(var)*(expr + -1*expr.coeff(var)*var)
+        # print(no_var)
         if isinstance(cs, Equality):
-            var_rhs.add(Eq(no_var, var))
+            var_rhs.add(Eq(expr, 0))
         elif isinstance(cs, LessThan):
-            var_rhs.add((no_var <= var))
+            var_rhs.add(expr <= 0)
         elif isinstance(cs, GreaterThan):
-            var_rhs.add((no_var >= var))
+            var_rhs.add(expr >= 0)
         else:
             print('\tunrecognized comparator')
             assert(False)
