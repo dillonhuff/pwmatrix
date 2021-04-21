@@ -354,13 +354,13 @@ def separate_constraints(var, constraints):
     print(reisolated)
 
     auxiliary = [True]
-    equalities = []
+    pre_equalities = []
     upper_bounds = []
     lower_bounds = []
     for cs in reisolated:
         assert(cs.lhs.coeff(var) == 0 and cs.rhs.coeff(var) == 1)
         if isinstance(cs, Equality):
-            equalities.append(cs)
+            pre_equalities.append(cs)
         elif isinstance(cs, LessThan):
             lower_bounds.append(cs)
         elif isinstance(cs, GreaterThan):
@@ -368,6 +368,14 @@ def separate_constraints(var, constraints):
         else:
             print('\tunrecognized comparator')
             assert(False)
+
+    equalities = []
+    if len(pre_equalities) > 0:
+        replacement = pre_equalities[0].lhs
+        equalities.append(pre_equalities[0])
+        for ec in pre_equalities[1:]:
+            auxiliary.append(ec.subs(var, replacement))
+
     return equalities, upper_bounds, lower_bounds, auxiliary
 
 def concretify_sum(symsum):
@@ -386,6 +394,7 @@ def concretify_sum(symsum):
     print('eq:', equalities)
     print('ub:', upper_bounds)
     print('lb:', lower_bounds)
+    print('ax:', auxiliary_constraints)
 
     # TODO: Check auxiliary constraints as well
     assert(len(equalities) == 0)
