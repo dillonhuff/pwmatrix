@@ -385,50 +385,52 @@ def concretify_sum(symsum):
 
     print(piecewise_sums)
 
-    assert(False)
+    return piecewise_sums
 
-    # Now: Move auxiliary constraints to a piecewise wrapper
-    # and delete them from the major set
-    # Enumerate all possible mixes of upper and lower bounds
-    # and sum over them
-    tms = set()
-    for constraint in all_constraints:
-        expr = constraint.lhs - constraint.rhs
-        if expr.coeff(k) == 0:
-            continue
-        no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
-        tms.add(no_k)
+    # assert(False)
 
-    print(all_constraints)
-    assert(False)
+    # # Now: Move auxiliary constraints to a piecewise wrapper
+    # # and delete them from the major set
+    # # Enumerate all possible mixes of upper and lower bounds
+    # # and sum over them
+    # tms = set()
+    # for constraint in all_constraints:
+        # expr = constraint.lhs - constraint.rhs
+        # if expr.coeff(k) == 0:
+            # continue
+        # no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
+        # tms.add(no_k)
 
-    terms_to_order = list(tms)
-    orders = enumerate_orders(terms_to_order)
+    # print(all_constraints)
+    # assert(False)
 
-    print(tms)
-    print(orders)
+    # terms_to_order = list(tms)
+    # orders = enumerate_orders(terms_to_order)
 
-    sums_assuming_order = PiecewiseExpression()
-    for order in orders:
-        concrete_sums = []
-        ordera = copy.deepcopy(order)
-        # ordera.insert(0, ['-inf'])
-        # ordera.append(['inf'])
-        for i in range(len(ordera) - 1):
-            current = ordera[i][0]
-            next_g = ordera[i+1][0]
-            concrete_sums.append(App(ConcreteSum(), [current, App('-', [next_g, 1]), symsum.vs[1]]))
+    # print(tms)
+    # print(orders)
 
-        for i in range(len(ordera)):
-            next_g = ordera[i][0]
-            # concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
-            concrete_sums.append(beta_reduce(App(symsum.vs[1], [next_g])))
-        concrete_sum = App('+', concrete_sums)
-        # sums_assuming_order.add_piece(symsum, order)
-        sums_assuming_order.add_piece(concrete_sum, order_to_constraints(order))
+    # sums_assuming_order = PiecewiseExpression()
+    # for order in orders:
+        # concrete_sums = []
+        # ordera = copy.deepcopy(order)
+        # # ordera.insert(0, ['-inf'])
+        # # ordera.append(['inf'])
+        # for i in range(len(ordera) - 1):
+            # current = ordera[i][0]
+            # next_g = ordera[i+1][0]
+            # concrete_sums.append(App(ConcreteSum(), [current, App('-', [next_g, 1]), symsum.vs[1]]))
 
-    print(sums_assuming_order)
-    return sums_assuming_order
+        # for i in range(len(ordera)):
+            # next_g = ordera[i][0]
+            # # concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
+            # concrete_sums.append(beta_reduce(App(symsum.vs[1], [next_g])))
+        # concrete_sum = App('+', concrete_sums)
+        # # sums_assuming_order.add_piece(symsum, order)
+        # sums_assuming_order.add_piece(concrete_sum, order_to_constraints(order))
+
+    # print(sums_assuming_order)
+    # return sums_assuming_order
 
 
 fss = concretify_sum(res)
