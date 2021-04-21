@@ -397,18 +397,32 @@ def concretify_sum(symsum):
     print('ax:', auxiliary_constraints)
 
     # TODO: Check auxiliary constraints as well
-    assert(len(equalities) == 0)
+    if (len(equalities) == 0):
 
-    piecewise_sums = PiecewiseExpression()
-    for l in lower_bounds:
-        l_constraints = []
-        for k in lower_bounds:
-            l_constraints.append(k.lhs <= l.lhs)
-        for u in upper_bounds:
-            u_constraints = []
-            for k in upper_bounds:
-                u_constraints.append(k.lhs >= u.lhs)
-            piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
+        piecewise_sums = PiecewiseExpression()
+        for l in lower_bounds:
+            l_constraints = []
+            for k in lower_bounds:
+                l_constraints.append(k.lhs <= l.lhs)
+            for u in upper_bounds:
+                u_constraints = []
+                for k in upper_bounds:
+                    u_constraints.append(k.lhs >= u.lhs)
+                piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
+    else:
+        assert(len(equalities) == 1)
+        piecewise_sums = PiecewiseExpression()
+        var_val = equalities[0].lhs
+        for l in lower_bounds:
+            l_constraints = []
+            for k in lower_bounds:
+                l_constraints.append(k.lhs <= l.lhs)
+            for u in upper_bounds:
+                u_constraints = []
+                for k in upper_bounds:
+                    u_constraints.append(k.lhs >= u.lhs)
+                piecewise_sums.add_piece(substitute(var, var_val, symsum.vs[1]), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
+        # assert(False)
 
     print(piecewise_sums)
 
