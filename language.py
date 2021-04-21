@@ -572,11 +572,33 @@ UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
 ip = product(UpperTriangular, UpperTriangular)
 sepsum = separate_sum_of_pieces(ip)
-print(sepsum)
+print('separated sum:', sepsum)
 
 simplified = concretify_sum(sepsum)
-for p in simplified.pieces:
-    for cs in p.P:
-        print(cs.doit())
+print('# of simplified pieces = ', len(simplified.pieces))
+
+def simplify_pieces(simplified):
+    for p in simplified.pieces:
+        print('\t', p)
+        fr = []
+        for cs in p.P:
+            ss = simplify(cs.doit())
+            print('\t\t', ss)
+            if ss != True:
+                fr.append(ss)
+        p.P = fr
+        print('\tfr:', p.P)
+
+simplify_pieces(simplified)
+
+if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
+    simplified = simplified.pieces[0].f
+
+simplify_pieces(simplified)
 print(simplified)
+# non_trivial_pieces = PiecewiseExpression()
+# for p in simplified.pieces:
+    # if p.P != []:
+        # non_trivial_pieces.add_piece(p.f, p.P)
+# print(non_trivial_pieces)
 
