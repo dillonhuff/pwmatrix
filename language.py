@@ -549,7 +549,7 @@ def product(A, B):
     prod = pwmul(Il, Ir)
 
     ss = Set([k], [1 <= k, k <= N])
-    return App(SymSum(), [ss, prod])
+    return App(SymSum(), [ss, Lambda(k, prod)])
 
 Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
 I = PiecewiseExpression()
@@ -560,6 +560,7 @@ I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 print('I:', I)
 ip = product(I, I)
 print(ip)
+assert(False)
 
 def separate_sum_of_pieces(ss):
     assert(isinstance(ss, App))
