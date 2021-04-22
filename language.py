@@ -609,14 +609,24 @@ def simplify_pieces(ss):
         p.P = fr
     return simplified
 
-simplified = simplify_pieces(simplified)
-
 def extract_unconditional_expression(simplified):
     if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
         return simplified.pieces[0].f
     return simplified
 
+def distribute_piece(pwf):
+    assert(isinstance(pwf, PiecewiseExpression))
+    if len(pwf.pieces) == 1:
+        if isinstance(pwf.pieces[0].f, PiecewiseExpression):
+            pushed = copy.deepcopy(pwf.pieces[0].f)
+            pushed.add_context(pwf.pieces[0].P)
+            return pushed
+    return pwf
+
+simplified = simplify_pieces(simplified)
+
+
 simplified = simplify_pieces(extract_unconditional_expression(simplified))
-simplified = mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x)
+simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
 print(simplified)
 
