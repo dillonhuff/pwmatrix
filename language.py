@@ -585,11 +585,6 @@ def separate_sum_of_pieces(ss):
 
     var = func.vs[0]
     func = func.f
-    # if not isinstance(func, PiecewiseExpression):
-        # return ss
-    # print(ss, 'is a sum over a piecewise function')
-
-    # print('dom:', domain)
     sepsum = []
     for p in func.pieces:
         if p.f != 0:
@@ -608,6 +603,20 @@ def product(A, B):
     ss = Set([k], [sympify(True)])
     return App(SymSum(), [ss, Lambda(k, prod)])
 
+def evaluate_product(A, B):
+    ip = product(A, B)
+    print('\nA*B:', ip)
+
+    sepsum = separate_sum_of_pieces(ip)
+    print('separated sum:', sepsum)
+
+    sepsum = concretify_sum(sepsum)
+    print('Concrete:', sepsum)
+    simplified = simplify_pieces(extract_unconditional_expression(sepsum))
+    simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
+    print('Concrete after simplification:', simplified)
+    return simplified
+
 Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
 I = PiecewiseExpression()
 I.add_piece(nsimplify(0), Bnds + [r < c])
@@ -615,20 +624,22 @@ I.add_piece(nsimplify(0), Bnds + [r > c])
 I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 
 
-print('I:', I)
-ip = product(I, I)
-print('\nI*I:', ip)
+evaluate_product(I, I)
+print()
+# print('I:', I)
+# ip = product(I, I)
+# print('\nI*I:', ip)
 
 
-sepsum = separate_sum_of_pieces(ip)
-print('separated sum:', sepsum)
+# sepsum = separate_sum_of_pieces(ip)
+# print('separated sum:', sepsum)
 
-sepsum = concretify_sum(sepsum)
-print('Concrete:', sepsum)
-simplified = simplify_pieces(extract_unconditional_expression(sepsum))
-simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
-print('Concrete after simplification:', simplified)
-assert(False)
+# sepsum = concretify_sum(sepsum)
+# print('Concrete:', sepsum)
+# simplified = simplify_pieces(extract_unconditional_expression(sepsum))
+# simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
+# print('Concrete after simplification:', simplified)
+# assert(False)
 
 f = Function("f")
 UpperTriangular = PiecewiseExpression()
@@ -636,8 +647,11 @@ UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
 # ip = product(I, UpperTriangular)
+print(evaluate_product(I, UpperTriangular))
+assert(False)
+
 # ip = product(UpperTriangular, UpperTriangular)
-ip = product(I, I)
+# ip = product(I, I)
 sepsum = separate_sum_of_pieces(ip)
 print('separated sum:', sepsum)
 
