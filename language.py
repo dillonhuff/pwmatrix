@@ -227,7 +227,7 @@ class PiecewiseExpression:
         self.pieces.append(Piece(f, p))
 
     def __repr__(self):
-        ss = '[{0}]'.format(self.pieces)
+        ss = '{0}'.format(', '.join(list(map(lambda x: str(x), self.pieces))))
         return ss
 
     def to_sympy(self):
