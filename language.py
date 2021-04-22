@@ -473,7 +473,7 @@ def concretify_sum(symsum):
                 for k in upper_bounds:
                     u_constraints.append(k.lhs >= u.lhs)
                 # piecewise_sums.add_piece(substitute(var, var_val, symsum.vs[1]), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
-                piecewise_sums.add_piece(symsum.vs[1], l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
+                piecewise_sums.add_piece(beta_reduce(App(symsum.vs[1], [var_val])), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
 
     print(piecewise_sums)
 
