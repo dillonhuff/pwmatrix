@@ -623,7 +623,11 @@ print('\nI*I:', ip)
 sepsum = separate_sum_of_pieces(ip)
 print('separated sum:', sepsum)
 
-print('Concrete:', concretify_sum(sepsum))
+sepsum = concretify_sum(sepsum)
+print('Concrete:', sepsum)
+simplified = simplify_pieces(extract_unconditional_expression(sepsum))
+simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
+print('Concrete after simplification:', simplified)
 assert(False)
 
 f = Function("f")
