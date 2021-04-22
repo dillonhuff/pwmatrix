@@ -19,6 +19,7 @@ def pwmul(a, b):
     return compose_pointwise(lambda x, y: x*y, a, b)
 
 def scale(scalar, cs):
+    print('\t\t\tscaling {0} by {1}'.format(cs, scalar))
     is_negative = scalar < 0
     scaled_lhs = scalar*cs.lhs
     scaled_rhs = scalar*cs.rhs
@@ -160,7 +161,7 @@ class Piece:
         return M(Piece(ff, fP))
 
     def __repr__(self):
-        return '({0} if {1})'.format(self.f, self.P)
+        return '{0} if {1}'.format(self.f, self.P)
 
     @property
     def variables(self):
@@ -360,11 +361,13 @@ def separate_constraints(var, constraints):
 
     print(normalized)
 
+    print('moving sum var to RHS...')
     var_rhs = set()
     for cs in normalized:
         expr = cs.lhs - cs.rhs
         # no_var = -1*expr.coeff(var)*(expr + -1*expr.coeff(var)*var)
-        # print(no_var)
+        print('\t:', cs)
+        print('\t:', expr)
         if isinstance(cs, Equality):
             var_rhs.add(Eq(expr, 0))
         elif isinstance(cs, LessThan):
@@ -374,28 +377,38 @@ def separate_constraints(var, constraints):
         else:
             print('\tunrecognized comparator')
             assert(False)
+        print('\tvar_rhs', var_rhs)
 
     print('var rhs:', var_rhs)
 
     scaled_coeffs = set()
     for cs in var_rhs:
-        scaled_coeffs.add(scale(cs.lhs.coeff(var), cs))
+        if cs.lhs.coeff(var) == 0:
+            scaled_coeffs.add(cs)
+        else:
+            print('\tscaling:', cs)
+            scaled_cs = scale(cs.lhs.coeff(var), cs)
+            print('\t\tscaled_cs', scaled_cs)
+            scaled_coeffs.add(scaled_cs)
 
     print('scaled', scaled_coeffs)
     isolated = set()
     for cs in scaled_coeffs:
         if cs == True:
             continue
-        assert(cs.lhs.coeff(var) == 1 and cs.rhs.coeff(var) == 0)
-        if isinstance(cs, Equality):
-            isolated.add(Eq(cs.lhs - var, cs.rhs - var))
-        elif isinstance(cs, LessThan):
-            isolated.add((cs.lhs - var <= cs.rhs - var))
-        elif isinstance(cs, GreaterThan):
-            isolated.add((cs.lhs - var >= cs.rhs - var))
+        if cs.lhs.coeff(var) == 0:
+            isolated.add(cs)
         else:
-            print('\tunrecognized comparator')
-            assert(False)
+            assert(cs.lhs.coeff(var) == 1 and cs.rhs.coeff(var) == 0)
+            if isinstance(cs, Equality):
+                isolated.add(Eq(cs.lhs - var, cs.rhs - var))
+            elif isinstance(cs, LessThan):
+                isolated.add((cs.lhs - var <= cs.rhs - var))
+            elif isinstance(cs, GreaterThan):
+                isolated.add((cs.lhs - var >= cs.rhs - var))
+            else:
+                print('\tunrecognized comparator')
+                assert(False)
 
     print(isolated)
     reisolated = set()
@@ -409,16 +422,19 @@ def separate_constraints(var, constraints):
     upper_bounds = []
     lower_bounds = []
     for cs in reisolated:
-        assert(cs.lhs.coeff(var) == 0 and cs.rhs.coeff(var) == 1)
-        if isinstance(cs, Equality):
-            pre_equalities.append(cs)
-        elif isinstance(cs, LessThan):
-            lower_bounds.append(cs)
-        elif isinstance(cs, GreaterThan):
-            upper_bounds.append(cs)
+        if cs.rhs.coeff(var) == 0:
+            auxiliary.append(cs)
         else:
-            print('\tunrecognized comparator')
-            assert(False)
+            assert(cs.lhs.coeff(var) == 0 and cs.rhs.coeff(var) == 1)
+            if isinstance(cs, Equality):
+                pre_equalities.append(cs)
+            elif isinstance(cs, LessThan):
+                lower_bounds.append(cs)
+            elif isinstance(cs, GreaterThan):
+                upper_bounds.append(cs)
+            else:
+                print('\tunrecognized comparator')
+                assert(False)
 
     equalities = []
     if len(pre_equalities) > 0:
