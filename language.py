@@ -1,6 +1,11 @@
 from sympy import *
 import copy
 
+def mutate_after(k, M):
+    if hasattr(k, 'mutate_after'):
+        return k.mutate_after(M)
+    return k
+
 def compose_pointwise(op, f, g):
     composed = PiecewiseExpression()
     for fp in f.pieces:
@@ -10,6 +15,7 @@ def compose_pointwise(op, f, g):
 
 def pwmul(a, b):
     return compose_pointwise(lambda x, y: x*y, a, b)
+
 def scale(scalar, cs):
     is_negative = scalar < 0
     scaled_lhs = scalar*cs.lhs
@@ -143,6 +149,11 @@ class Piece:
         self.f = f
         self.P = P
 
+    def mutate_after(self, M):
+        ff = mutate_after(self.f, M)
+        fP = mutate_after(self.P, M)
+        return M(Piece(ff, fP))
+
     def __repr__(self):
         return '({0} if {1})'.format(self.f, self.P)
 
@@ -167,10 +178,18 @@ class Piece:
                 print(cc)
                 syms.add(cc)
         return syms
+
 class PiecewiseExpression:
 
     def __init__(self):
         self.pieces = []
+
+    def mutate_after(self, M):
+        cpy = PiecewiseExpression()
+        for p in self.pieces:
+            mp = mutate_after(p, M)
+            cpy.add_piece(mp.f, mp.P)
+        return M(cpy)
 
     @property
     def variables(self):
@@ -579,7 +598,8 @@ print('separated sum:', sepsum)
 simplified = concretify_sum(sepsum)
 print('# of simplified pieces = ', len(simplified.pieces))
 
-def simplify_pieces(simplified):
+def simplify_pieces(ss):
+    simplified = copy.deepcopy(ss)
     for p in simplified.pieces:
         print('\t', p)
         fr = []
@@ -590,18 +610,14 @@ def simplify_pieces(simplified):
                 fr.append(ss)
         p.P = fr
         print('\tfr:', p.P)
+    return simplified
 
-simplify_pieces(simplified)
+simplified = simplify_pieces(simplified)
 
 if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
     simplified = simplified.pieces[0].f
 
-simplify_pieces(simplified)
+simplified = simplify_pieces(simplified)
+simplified = mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x)
 print(simplified)
-
-# non_trivial_pieces = PiecewiseExpression()
-# for p in simplified.pieces:
-    # if p.P != []:
-        # non_trivial_pieces.add_piece(p.f, p.P)
-# print(non_trivial_pieces)
 
