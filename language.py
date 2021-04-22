@@ -73,7 +73,10 @@ def substitute(target, value, expr):
 class Lambda:
 
     def __init__(self, vs, f):
-        self.vs = vs
+        if isinstance(vs, list):
+            self.vs = vs
+        else:
+            self.vs = [vs]
         self.f = f
 
     def __repr__(self):
@@ -568,6 +571,31 @@ print('concrete results', r)
 r, c = symbols("r c")
 N = symbols("N")
 
+def separate_sum_of_pieces(ss):
+    assert(isinstance(ss, App))
+    assert(isinstance(ss.f, SymSum))
+
+    domain = ss.vs[0]
+    func = ss.vs[1]
+    print('func:', func)
+    assert(isinstance(func, Lambda))
+    assert(len(func.vs) == 1)
+
+    var = func.vs[0]
+    func = func.f
+    # if not isinstance(func, PiecewiseExpression):
+        # return ss
+    # print(ss, 'is a sum over a piecewise function')
+
+    # print('dom:', domain)
+    sepsum = []
+    for p in func.pieces:
+        if p.f != 0:
+            sepsum.append(App(SymSum(), [Set(domain.vs, list(domain.constraints) + list(p.P)), Lambda([var], p.f)]))
+    if len(sepsum) == 1:
+        return sepsum[0]
+    return App('+', sepsum)
+
 def product(A, B):
     r, c, k = symbols("r c k")
     Il = A.subs(c, k)
@@ -588,28 +616,12 @@ I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 print('I:', I)
 ip = product(I, I)
 print('\nI*I:', ip)
-assert(False)
 
-def separate_sum_of_pieces(ss):
-    assert(isinstance(ss, App))
-    assert(isinstance(ss.f, SymSum))
-    domain = ss.vs[0]
-    func = ss.vs[1]
-    if not isinstance(func, PiecewiseExpression):
-        return ss
-    print(ss, 'is a sum over a piecewise function')
-
-    print('dom:', domain)
-    sepsum = []
-    for p in func.pieces:
-        if p.f != 0:
-            sepsum.append(App(SymSum(), [Set(domain.vs, list(domain.constraints) + list(p.P)), p.f]))
-    if len(sepsum) == 1:
-        return sepsum[0]
-    return App('+', sepsum)
 
 sepsum = separate_sum_of_pieces(ip)
-print(sepsum)
+print('separated sum:', sepsum)
+assert(False)
+
 print(concretify_sum(sepsum))
 
 
