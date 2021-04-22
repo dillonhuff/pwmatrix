@@ -10,7 +10,9 @@ def compose_pointwise(op, f, g):
     composed = PiecewiseExpression()
     for fp in f.pieces:
         for gp in g.pieces:
-            composed.pieces.append(Piece(op(fp.f, gp.f), fp.P + gp.P))
+            operator = op(fp.f, gp.f)
+            if operator != 0:
+                composed.pieces.append(Piece(op(fp.f, gp.f), fp.P + gp.P))
     return composed
 
 def pwmul(a, b):
@@ -625,9 +627,7 @@ print('separated sum:', sepsum)
 simplified = concretify_sum(sepsum)
 print('# of simplified pieces = ', len(simplified.pieces))
 
-
 simplified = simplify_pieces(simplified)
-
 
 simplified = simplify_pieces(extract_unconditional_expression(simplified))
 simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
