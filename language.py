@@ -456,6 +456,10 @@ def concretify_sum(symsum):
 
     k = domain.vs[0]
 
+    # Now: refactor this function so that instead of returning
+    # this set of constraints we return a domain decompostion
+    # which is:
+    # 1. A partition of the parameters of "domain" into regions where k can be expressed as an interval
     all_constraints = copy.deepcopy(domain.constraints)
     equalities, upper_bounds, lower_bounds, auxiliary_constraints = separate_constraints(k, all_constraints)
     print('eq:', equalities)
@@ -463,10 +467,10 @@ def concretify_sum(symsum):
     print('lb:', lower_bounds)
     print('ax:', auxiliary_constraints)
 
-    # TODO: Check auxiliary constraints as well
+    domain_decomposition = []
     if (len(equalities) == 0):
 
-        piecewise_sums = PiecewiseExpression()
+        # piecewise_sums = PiecewiseExpression()
         for l in lower_bounds:
             l_constraints = []
             for k in lower_bounds:
@@ -475,10 +479,12 @@ def concretify_sum(symsum):
                 u_constraints = []
                 for k in upper_bounds:
                     u_constraints.append(k.lhs >= u.lhs)
-                piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
+
+                domain_decomposition.append([l.lhs, u.lhs, l_constraints + u_constraints + [l.lhs <= u.lhs]])
+                # piecewise_sums.add_piece(App(ConcreteSum(), [l.lhs, u.lhs, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
     else:
         assert(len(equalities) == 1)
-        piecewise_sums = PiecewiseExpression()
+        # piecewise_sums = PiecewiseExpression()
         var_val = equalities[0].lhs
         for l in lower_bounds:
             l_constraints = []
@@ -488,8 +494,14 @@ def concretify_sum(symsum):
                 u_constraints = []
                 for k in upper_bounds:
                     u_constraints.append(k.lhs >= u.lhs)
+                domain_decomposition.append([var_val, var_val, l_constraints + u_constraints + [l.lhs <= u.lhs]])
+                # piecewise_sums.add_piece(App(ConcreteSum(), [var_val, var_val, symsum.vs[1]]), l_constraints + u_constraints + [l.lhs <= u.lhs])
                 # piecewise_sums.add_piece(substitute(var, var_val, symsum.vs[1]), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
-                piecewise_sums.add_piece(beta_reduce(App(symsum.vs[1], [var_val])), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
+                # piecewise_sums.add_piece(beta_reduce(App(symsum.vs[1], [var_val])), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
+
+    piecewise_sums = PiecewiseExpression()
+    for part in domain_decomposition:
+        piecewise_sums.add_piece(App(ConcreteSum(), [part[0], part[1]]), part[2])
 
     print(piecewise_sums)
 
