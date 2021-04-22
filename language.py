@@ -227,7 +227,7 @@ class PiecewiseExpression:
         self.pieces.append(Piece(f, p))
 
     def __repr__(self):
-        ss = '{0}'.format(', '.join(list(map(lambda x: str(x), self.pieces))))
+        ss = '{' + '{0}'.format(', '.join(list(map(lambda x: str(x), self.pieces)))) + '}'
         return ss
 
     def to_sympy(self):
@@ -297,6 +297,31 @@ print('res:',res)
 ss = App(ConcreteSum(), [1, 7, f])
 print(ss)
 
+def simplify_pieces(ss):
+    simplified = copy.deepcopy(ss)
+    for p in simplified.pieces:
+        print('\tsimplifying:', p)
+        fr = set()
+        for cs in p.P:
+            ss = simplify(cs.doit())
+            if ss != True:
+                fr.add(ss)
+        p.P = list(fr)
+    return simplified
+
+def extract_unconditional_expression(simplified):
+    if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
+        return simplified.pieces[0].f
+    return simplified
+
+def distribute_piece(pwf):
+    assert(isinstance(pwf, PiecewiseExpression))
+    if len(pwf.pieces) == 1:
+        if isinstance(pwf.pieces[0].f, PiecewiseExpression):
+            pushed = copy.deepcopy(pwf.pieces[0].f)
+            pushed.add_context(pwf.pieces[0].P)
+            return pushed
+    return pwf
 def order_to_constraints(order):
     k_ranges = []
     for gp in order:
@@ -546,9 +571,9 @@ def product(A, B):
     Il = A.subs(c, k)
     Ir = B.subs(r, k)
 
-    prod = pwmul(Il, Ir)
+    prod = simplify_pieces(pwmul(Il, Ir))
 
-    ss = Set([k], [1 <= k, k <= N])
+    ss = Set([k], [sympify(True)])
     return App(SymSum(), [ss, Lambda(k, prod)])
 
 Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
@@ -557,9 +582,10 @@ I.add_piece(nsimplify(0), Bnds + [r < c])
 I.add_piece(nsimplify(0), Bnds + [r > c])
 I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 
+
 print('I:', I)
 ip = product(I, I)
-print(ip)
+print('\nI*I:', ip)
 assert(False)
 
 def separate_sum_of_pieces(ss):
@@ -599,30 +625,6 @@ print('separated sum:', sepsum)
 simplified = concretify_sum(sepsum)
 print('# of simplified pieces = ', len(simplified.pieces))
 
-def simplify_pieces(ss):
-    simplified = copy.deepcopy(ss)
-    for p in simplified.pieces:
-        fr = []
-        for cs in p.P:
-            ss = simplify(cs.doit())
-            if ss != True:
-                fr.append(ss)
-        p.P = fr
-    return simplified
-
-def extract_unconditional_expression(simplified):
-    if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
-        return simplified.pieces[0].f
-    return simplified
-
-def distribute_piece(pwf):
-    assert(isinstance(pwf, PiecewiseExpression))
-    if len(pwf.pieces) == 1:
-        if isinstance(pwf.pieces[0].f, PiecewiseExpression):
-            pushed = copy.deepcopy(pwf.pieces[0].f)
-            pushed.add_context(pwf.pieces[0].P)
-            return pushed
-    return pwf
 
 simplified = simplify_pieces(simplified)
 
