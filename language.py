@@ -1,6 +1,116 @@
 from sympy import *
 import copy
 
+from z3 import Solver, sat
+from z3 import Int, Real, Sqrt
+
+def sympy_to_z3(sympy_var_list, sympy_exp):
+    'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
+
+    z3_vars = []
+    z3_var_map = {}
+
+    for var in sympy_var_list:
+        # print('var: ', var)
+        name = var.name
+        z3_var = Int(name)
+        z3_var_map[name] = z3_var
+        z3_vars.append(z3_var)
+
+    result_exp = _sympy_to_z3_rec(z3_var_map, sympy_exp)
+
+    return z3_vars, result_exp
+
+def _sympy_to_z3_rec(var_map, e):
+    'recursive call for sympy_to_z3()'
+
+    rv = None
+
+    if not isinstance(e, Expr):
+        raise RuntimeError("Expected sympy Expr: " + repr(e))
+
+    if isinstance(e, Symbol):
+        rv = var_map.get(e.name)
+
+        if rv == None:
+            raise RuntimeError("No var was corresponds to symbol '" + str(e) + "'")
+
+    elif isinstance(e, Number):
+        rv = float(e)
+    elif isinstance(e, Mul):
+        rv = _sympy_to_z3_rec(var_map, e.args[0])
+
+        for child in e.args[1:]:
+            rv *= _sympy_to_z3_rec(var_map, child)
+    elif isinstance(e, Add):
+        rv = _sympy_to_z3_rec(var_map, e.args[0])
+
+        for child in e.args[1:]:
+            rv += _sympy_to_z3_rec(var_map, child)
+    elif isinstance(e, Pow):
+        term = _sympy_to_z3_rec(var_map, e.args[0])
+        exponent = _sympy_to_z3_rec(var_map, e.args[1])
+
+        if exponent == 0.5:
+            # sqrt
+            rv = Sqrt(term)
+        else:
+            rv = term**exponent
+
+    if rv == None:
+        raise RuntimeError("Type '" + str(type(e)) + "' is not yet implemented for convertion to a z3 expresion. " + \
+                            "Subexpression was '" + str(e) + "'.")
+
+    return rv
+
+def cull_pieces(I):
+    # TODO: Replace with free variables in I
+    N, r, c, k = symbols("N r c k")
+    I_culled = PiecewiseExpression()
+    for p in I.pieces:
+        varlist = []
+        for cs in p.P:
+            for sym in cs.free_symbols:
+                varlist.append(sym)
+        s = Solver()
+        print('checking: ', p.P)
+        for cs in p.P:
+            expr = sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1]
+            if isinstance(cs, Equality):
+                s.add(expr == 0)
+            elif isinstance(cs, StrictGreaterThan):
+                s.add(expr > 0)
+            elif isinstance(cs, StrictLessThan):
+                s.add(expr < 0)
+            elif isinstance(cs, LessThan):
+                s.add(expr <= 0)
+            elif isinstance(cs, GreaterThan):
+                s.add(expr >= 0)
+            else:
+                print('\tunrecognized comparator')
+                assert(False)
+
+        result = s.check()
+
+        if result == sat:
+            m = s.model()
+            print ("SAT: {}".format(m))
+            I_culled.add_piece(copy.deepcopy(p.f), copy.deepcopy(p.P))
+        else:
+            print ("UNSAT")
+
+    return I_culled
+def simplify_sum(s):
+    assert(isinstance(s, App))
+    assert(isinstance(s.f, ConcreteSum))
+    assert(len(s.vs) == 3)
+    l = s.vs[0]
+    u = s.vs[1]
+
+    if l == u:
+        return beta_reduce(App(s.vs[2], [l]))
+    return s
+
 def container_position(val, l):
     i = 0
     for container in l:
@@ -126,6 +236,11 @@ class App:
             return '({0} - {1})'.format(self.vs[0], self.vs[1])
 
         return '({0}{1})'.format(self.f, self.vs)
+
+    def mutate_after(self, M):
+        freshf = M(self.f)
+        freshargs = list(map(lambda x : mutate_after(x, M), self.vs))
+        return M(App(freshf, freshargs))
 
     def subs(self, target, value):
         return App(substitute(target, value, self.f), list(map(lambda x: substitute(target, value, x), self.vs)))
@@ -631,7 +746,8 @@ Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
 I = PiecewiseExpression()
 I.add_piece(nsimplify(0), Bnds + [r < c])
 I.add_piece(nsimplify(0), Bnds + [r > c])
-I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+# I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+I.add_piece(r + c, Bnds + [Eq(r, c)])
 
 
 evaluate_product(I, I)
@@ -657,7 +773,8 @@ UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
 # ip = product(I, UpperTriangular)
-ip = evaluate_product(I, UpperTriangular)
+ip = cull_pieces(mutate_after(evaluate_product(I, UpperTriangular), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+
 print(ip)
 print()
 print('--- Pieces...')
@@ -668,19 +785,20 @@ assert(False)
 
 # ip = product(UpperTriangular, UpperTriangular)
 # ip = product(I, I)
-sepsum = separate_sum_of_pieces(ip)
-print('separated sum:', sepsum)
+# sepsum = separate_sum_of_pieces(ip)
+# print('separated sum:', sepsum)
 
-simplified = concretify_sum(sepsum)
-print('# of simplified pieces = ', len(simplified.pieces))
+# simplified = concretify_sum(sepsum)
+# print('# of simplified pieces = ', len(simplified.pieces))
 
-simplified = simplify_pieces(simplified)
+# simplified = simplify_pieces(simplified)
 
-simplified = simplify_pieces(extract_unconditional_expression(simplified))
-simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
-print(simplified)
-print()
-print('--- Pieces...')
-for p in simplified.pieces:
-    print(p)
-    print()
+# simplified = simplify_pieces(extract_unconditional_expression(simplified))
+# simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
+# print(simplified)
+# print()
+# print('--- Pieces...')
+# for p in simplified.pieces:
+    # print(p)
+    # print()
+
