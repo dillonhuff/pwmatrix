@@ -501,7 +501,7 @@ def concretify_sum(symsum):
 
     piecewise_sums = PiecewiseExpression()
     for part in domain_decomposition:
-        piecewise_sums.add_piece(App(ConcreteSum(), [part[0], part[1]]), part[2])
+        piecewise_sums.add_piece(App(ConcreteSum(), [part[0], part[1], symsum.vs[1]]), part[2])
 
     print(piecewise_sums)
 
