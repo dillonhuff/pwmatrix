@@ -1,6 +1,15 @@
 from sympy import *
 import copy
 
+def container_position(val, l):
+    i = 0
+    for container in l:
+        if val in container:
+            return i
+        i += 1
+    print('Error: No element contains {0} in {1}'.format(val, l))
+    assert(False)
+
 def mutate_after(k, M):
     if hasattr(k, 'mutate_after'):
         return k.mutate_after(M)
@@ -460,6 +469,36 @@ def fm_domain_decomposition(k, all_constraints):
     print('ax:', auxiliary_constraints)
     assert(len(equalities) == 0)
 
+    terms_to_order = set()
+    for b in upper_bounds:
+        terms_to_order.add(b.lhs)
+    for b in lower_bounds:
+        terms_to_order.add(b.lhs)
+    print('to order', terms_to_order)
+    orders = enumerate_orders(list(terms_to_order))
+    lbs = set()
+    for l in lower_bounds:
+        lbs.add(l.lhs)
+    ubs = set()
+    for l in upper_bounds:
+        ubs.add(l.lhs)
+    print('\norders:', orders)
+    print('\tub:', ubs)
+    print('\tlb:', lbs)
+
+    domain_decomposition = []
+    for order in orders:
+        print('\tOrder:', order)
+        least_upper_bound_pos = min(map(lambda x: container_position(x, order), ubs))
+        greatest_lower_bound_pos = max(map(lambda x: container_position(x, order), lbs))
+        if least_upper_bound_pos == greatest_lower_bound_pos:
+            print('\t\tk is a point')
+        elif least_upper_bound_pos > greatest_lower_bound_pos:
+            print('\t\tk is an interval')
+        else:
+            print('\t\tk is empty')
+    assert(False)
+
     domain_decomposition = []
     for l in lower_bounds:
         l_constraints = []
@@ -484,10 +523,6 @@ def concretify_sum(symsum):
 
     k = domain.vs[0]
 
-    # Now: refactor this function so that instead of returning
-    # this set of constraints we return a domain decompostion
-    # which is:
-    # 1. A partition of the parameters of "domain" into regions where k can be expressed as an interval
     all_constraints = copy.deepcopy(domain.constraints)
     domain_decomposition = fm_domain_decomposition(k, all_constraints)
     piecewise_sums = PiecewiseExpression()
@@ -496,57 +531,6 @@ def concretify_sum(symsum):
 
     print(piecewise_sums)
     return piecewise_sums
-
-    # wrapper = PiecewiseExpression()
-    # wrapper.add_piece(piecewise_sums, auxiliary_constraints)
-
-    # return wrapper
-
-    # assert(False)
-
-    # # Now: Move auxiliary constraints to a piecewise wrapper
-    # # and delete them from the major set
-    # # Enumerate all possible mixes of upper and lower bounds
-    # # and sum over them
-    # tms = set()
-    # for constraint in all_constraints:
-        # expr = constraint.lhs - constraint.rhs
-        # if expr.coeff(k) == 0:
-            # continue
-        # no_k = -1*expr.coeff(k)*(expr + -1*expr.coeff(k)*k)
-        # tms.add(no_k)
-
-    # print(all_constraints)
-    # assert(False)
-
-    # terms_to_order = list(tms)
-    # orders = enumerate_orders(terms_to_order)
-
-    # print(tms)
-    # print(orders)
-
-    # sums_assuming_order = PiecewiseExpression()
-    # for order in orders:
-        # concrete_sums = []
-        # ordera = copy.deepcopy(order)
-        # # ordera.insert(0, ['-inf'])
-        # # ordera.append(['inf'])
-        # for i in range(len(ordera) - 1):
-            # current = ordera[i][0]
-            # next_g = ordera[i+1][0]
-            # concrete_sums.append(App(ConcreteSum(), [current, App('-', [next_g, 1]), symsum.vs[1]]))
-
-        # for i in range(len(ordera)):
-            # next_g = ordera[i][0]
-            # # concrete_sums.append(App(ConcreteSum(), [next_g, next_g, symsum.vs[1]]))
-            # concrete_sums.append(beta_reduce(App(symsum.vs[1], [next_g])))
-        # concrete_sum = App('+', concrete_sums)
-        # # sums_assuming_order.add_piece(symsum, order)
-        # sums_assuming_order.add_piece(concrete_sum, order_to_constraints(order))
-
-    # print(sums_assuming_order)
-    # return sums_assuming_order
-
 
 fss = concretify_sum(res)
 
