@@ -337,6 +337,7 @@ def distribute_piece(pwf):
             pushed.add_context(pwf.pieces[0].P)
             return pushed
     return pwf
+
 def order_to_constraints(order):
     k_ranges = []
     for gp in order:
@@ -491,25 +492,30 @@ def fm_domain_decomposition(k, all_constraints):
         print('\tOrder:', order)
         least_upper_bound_pos = min(map(lambda x: container_position(x, order), ubs))
         greatest_lower_bound_pos = max(map(lambda x: container_position(x, order), lbs))
+
+        least_upper_bound_representative = order[least_upper_bound_pos][0]
+        greatest_lower_bound_representative = order[greatest_lower_bound_pos][0]
         if least_upper_bound_pos == greatest_lower_bound_pos:
-            print('\t\tk is a point')
+            print('\t\tk is a point {0}'.format(least_upper_bound_representative))
+            domain_decomposition.append([least_upper_bound_representative, least_upper_bound_representative, order_to_constraints(order) + auxiliary_constraints])
         elif least_upper_bound_pos > greatest_lower_bound_pos:
-            print('\t\tk is an interval')
+            print('\t\tk is an interval [{0}, {1}]'.format(greatest_lower_bound_representative, least_upper_bound_representative))
+            domain_decomposition.append([greatest_lower_bound_representative, least_upper_bound_representative, order_to_constraints(order) + auxiliary_constraints])
         else:
             print('\t\tk is empty')
-    assert(False)
+    # assert(False)
 
-    domain_decomposition = []
-    for l in lower_bounds:
-        l_constraints = []
-        for k in lower_bounds:
-            l_constraints.append(k.lhs <= l.lhs)
-        for u in upper_bounds:
-            u_constraints = []
-            for k in upper_bounds:
-                u_constraints.append(k.lhs >= u.lhs)
+    # domain_decomposition = []
+    # for l in lower_bounds:
+        # l_constraints = []
+        # for k in lower_bounds:
+            # l_constraints.append(k.lhs <= l.lhs)
+        # for u in upper_bounds:
+            # u_constraints = []
+            # for k in upper_bounds:
+                # u_constraints.append(k.lhs >= u.lhs)
 
-            domain_decomposition.append([l.lhs, u.lhs, auxiliary_constraints + l_constraints + u_constraints + [l.lhs <= u.lhs]])
+            # domain_decomposition.append([l.lhs, u.lhs, auxiliary_constraints + l_constraints + u_constraints + [l.lhs <= u.lhs]])
     return domain_decomposition
 
 def concretify_sum(symsum):
