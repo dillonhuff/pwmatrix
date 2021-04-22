@@ -570,7 +570,9 @@ UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
-ip = product(UpperTriangular, UpperTriangular)
+ip = product(I, UpperTriangular)
+# ip = product(UpperTriangular, UpperTriangular)
+# ip = product(I, I)
 sepsum = separate_sum_of_pieces(ip)
 print('separated sum:', sepsum)
 
@@ -596,6 +598,7 @@ if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
 
 simplify_pieces(simplified)
 print(simplified)
+
 # non_trivial_pieces = PiecewiseExpression()
 # for p in simplified.pieces:
     # if p.P != []:
