@@ -601,23 +601,22 @@ print('# of simplified pieces = ', len(simplified.pieces))
 def simplify_pieces(ss):
     simplified = copy.deepcopy(ss)
     for p in simplified.pieces:
-        print('\t', p)
         fr = []
         for cs in p.P:
             ss = simplify(cs.doit())
-            print('\t\t', ss)
             if ss != True:
                 fr.append(ss)
         p.P = fr
-        print('\tfr:', p.P)
     return simplified
 
 simplified = simplify_pieces(simplified)
 
-if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
-    simplified = simplified.pieces[0].f
+def extract_unconditional_expression(simplified):
+    if len(simplified.pieces) == 1 and len(simplified.pieces[0].P) == 0:
+        return simplified.pieces[0].f
+    return simplified
 
-simplified = simplify_pieces(simplified)
+simplified = simplify_pieces(extract_unconditional_expression(simplified))
 simplified = mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x)
 print(simplified)
 
