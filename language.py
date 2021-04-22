@@ -421,8 +421,8 @@ def concretify_sum(symsum):
                 u_constraints = []
                 for k in upper_bounds:
                     u_constraints.append(k.lhs >= u.lhs)
-                piecewise_sums.add_piece(substitute(var, var_val, symsum.vs[1]), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
-        # assert(False)
+                # piecewise_sums.add_piece(substitute(var, var_val, symsum.vs[1]), l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
+                piecewise_sums.add_piece(symsum.vs[1], l_constraints + u_constraints + [l.lhs <= u.lhs, l.lhs <= var_val, var_val <= u.lhs])
 
     print(piecewise_sums)
 
@@ -570,9 +570,9 @@ UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
-ip = product(I, UpperTriangular)
+# ip = product(I, UpperTriangular)
 # ip = product(UpperTriangular, UpperTriangular)
-# ip = product(I, I)
+ip = product(I, I)
 sepsum = separate_sum_of_pieces(ip)
 print('separated sum:', sepsum)
 
