@@ -657,7 +657,13 @@ UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
 
 # ip = product(I, UpperTriangular)
-print(evaluate_product(I, UpperTriangular))
+ip = evaluate_product(I, UpperTriangular)
+print(ip)
+print()
+print('--- Pieces...')
+for p in ip.pieces:
+    print(p)
+    print()
 assert(False)
 
 # ip = product(UpperTriangular, UpperTriangular)
@@ -673,4 +679,8 @@ simplified = simplify_pieces(simplified)
 simplified = simplify_pieces(extract_unconditional_expression(simplified))
 simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
 print(simplified)
-
+print()
+print('--- Pieces...')
+for p in simplified.pieces:
+    print(p)
+    print()
