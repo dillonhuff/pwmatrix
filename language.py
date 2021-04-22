@@ -342,6 +342,8 @@ def order_to_constraints(order):
 def separate_constraints(var, constraints):
     normalized = set()
     for cs in constraints:
+        if cs == True:
+            continue
         if isinstance(cs, Equality):
             normalized.add(Eq(cs.lhs - cs.rhs, 0))
         elif isinstance(cs, StrictGreaterThan):
@@ -353,7 +355,7 @@ def separate_constraints(var, constraints):
         elif isinstance(cs, GreaterThan):
             normalized.add(cs.lhs - cs.rhs >= 0)
         else:
-            print('\tunrecognized comparator')
+            print('\tunrecognized comparator in constraint:', cs)
             assert(False)
 
     print(normalized)
@@ -620,10 +622,9 @@ print('\nI*I:', ip)
 
 sepsum = separate_sum_of_pieces(ip)
 print('separated sum:', sepsum)
+
+print('Concrete:', concretify_sum(sepsum))
 assert(False)
-
-print(concretify_sum(sepsum))
-
 
 f = Function("f")
 UpperTriangular = PiecewiseExpression()
