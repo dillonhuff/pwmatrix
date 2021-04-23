@@ -57,8 +57,15 @@ def _sympy_to_z3_rec(var_map, e):
         else:
             rv = term**exponent
 
+    elif isinstance(e, Function):
+        # TODO: Actually add a unique name for functions
+        rv = Int('C_func')
+        # raise RuntimeError("Function type '" + str(type(e)) + "' is not yet implemented for conversion to a z3 expresion. " + \
+                            # "Subexpression was '" + str(e) + "'.")
+
+
     if rv == None:
-        raise RuntimeError("Type '" + str(type(e)) + "' is not yet implemented for convertion to a z3 expresion. " + \
+        raise RuntimeError("Type '" + str(type(e)) + "' is not yet implemented for conversion to a z3 expresion. " + \
                             "Subexpression was '" + str(e) + "'.")
 
     return rv
@@ -399,34 +406,6 @@ def left_reduce(expr):
         fresh = App(left_reduce(fresh.f), list(map(lambda v: left_reduce(v), fresh.vs)))
     return fresh
 
-i0, j0, t = symbols("i0 j0 t")
-
-le = Lambda([i0], Set([j0], [1 <= j0, j0 <= i0]))
-print(le)
-
-f = Lambda([t], t)
-print(f)
-
-i = symbols("i")
-ss = Lambda([i], App(SymSum(), [App(le, [i]), f]))
-
-print(ss)
-
-print(beta_reduce(App(ss, [7])))
-
-print(left_reduce(App(ss, [7])))
-
-res = left_reduce(App(ss, [7]))
-print('res:',res)
-# assert(False)
-
-# lifted = PiecewiseExpression()
-# lifted.add_piece(res, [True])
-# print('lifted:', lifted)
-
-ss = App(ConcreteSum(), [1, 7, f])
-print(ss)
-
 def simplify_pieces(ss):
     simplified = copy.deepcopy(ss)
     for p in simplified.pieces:
@@ -554,7 +533,7 @@ def separate_constraints(var, constraints):
     upper_bounds = []
     lower_bounds = []
     for cs in reisolated:
-        if cs.rhs.coeff(var) == 0:
+        if not var in cs.rhs.free_symbols: # cs.rhs.coeff(var) == 0:
             auxiliary.append(cs)
         else:
             assert(cs.lhs.coeff(var) == 0 and cs.rhs.coeff(var) == 1)
@@ -653,6 +632,34 @@ def concretify_sum(symsum):
     print(piecewise_sums)
     return piecewise_sums
 
+i0, j0, t = symbols("i0 j0 t")
+
+le = Lambda([i0], Set([j0], [1 <= j0, j0 <= i0]))
+print(le)
+
+f = Lambda([t], t)
+print(f)
+
+i = symbols("i")
+ss = Lambda([i], App(SymSum(), [App(le, [i]), f]))
+
+print(ss)
+
+print(beta_reduce(App(ss, [7])))
+
+print(left_reduce(App(ss, [7])))
+
+res = left_reduce(App(ss, [7]))
+print('res:',res)
+# assert(False)
+
+# lifted = PiecewiseExpression()
+# lifted.add_piece(res, [True])
+# print('lifted:', lifted)
+
+ss = App(ConcreteSum(), [1, 7, f])
+print(ss)
+
 fss = concretify_sum(res)
 
 print('Concrete')
@@ -743,11 +750,34 @@ def evaluate_product(A, B):
     return simplified
 
 Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
+f = Function("f")
+r, c = symbols("r c")
+UpperTriangular = PiecewiseExpression()
+UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
+UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
+
+C = Function("C")
+R = Function("R")
+P = PiecewiseExpression()
+P.add_piece(nsimplify(0), Bnds + [C(r) > c])
+P.add_piece(nsimplify(0), Bnds + [C(r) < c])
+P.add_piece(nsimplify(1), Bnds + [Eq(C(r), c)])
+
 I = PiecewiseExpression()
 I.add_piece(nsimplify(0), Bnds + [r < c])
 I.add_piece(nsimplify(0), Bnds + [r > c])
-# I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
-I.add_piece(r + c, Bnds + [Eq(r, c)])
+I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+# I.add_piece(r + c, Bnds + [Eq(r, c)])
+# print(P)
+
+ip = cull_pieces(mutate_after(evaluate_product(P, I), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+print('--- Pieces of permutation matrix product...')
+for p in ip.pieces:
+    print(p)
+    print()
+
+assert(False)
+
 
 
 evaluate_product(I, I)
@@ -767,12 +797,44 @@ print()
 # print('Concrete after simplification:', simplified)
 # assert(False)
 
-f = Function("f")
-UpperTriangular = PiecewiseExpression()
-UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
-UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
+
+# def extract_context(pwf):
+    # assert(isinstance(pwf, PiecewiseExpression))
+    # if len(pwf.pieces) == 0:
+        # return pwf
+    # common = pwf.pieces[0]
+    # for p in pwf.pieces[1:]:
+        # common = intersection(set(p.P))
+    # print('Common context:', common)
+    # return pwf
 
 # ip = product(I, UpperTriangular)
+
+def merge_pieces(pwf):
+    assert(isinstance(pwf, PiecewiseExpression))
+    merged = PiecewiseExpression()
+    for i in range(len(pwf.pieces)):
+        a = pwf.pieces[i]
+        if len(merged.pieces) == 0:
+            merged.add_piece(a.f, a.P)
+        else:
+            found_merger = False
+            for b in merged.pieces:
+                if a.f == b.f:
+                    print('\tmight be able to unify:', a, 'and', b)
+                    common_constraints = set.intersection(set(a.P), set(b.P))
+                    print('\t\tcommon constraints:', common_constraints)
+                    a_unique = set.difference(set(a.P), common_constraints)
+                    b_unique = set.difference(set(b.P), common_constraints)
+                    print('\t\ta unique:', a_unique)
+                    print('\t\tb unique:', b_unique)
+                    if len(a_unique) == 1 and len(b_unique) == 1 and (not isinstance(a_unique[0], Equality) or not isinstance(b_unique[0], Equality)):
+                        found_merger = True
+                        assert(False)
+            if not found_merger:
+                merged.add_piece(a.f, a.P)
+    return merged
+
 ip = cull_pieces(mutate_after(evaluate_product(I, UpperTriangular), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 
 print(ip)
@@ -781,7 +843,7 @@ print('--- Pieces...')
 for p in ip.pieces:
     print(p)
     print()
-assert(False)
+
 
 # ip = product(UpperTriangular, UpperTriangular)
 # ip = product(I, I)
