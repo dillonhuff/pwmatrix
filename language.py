@@ -88,7 +88,7 @@ def cull_pieces(I):
                 s.add(False)
                 # assert(False)
                 continue
-            print('cs = ', cs)
+            # print('cs = ', cs)
             expr = sympy_to_z3(list(cs.free_symbols), cs.lhs - cs.rhs)[1]
             if isinstance(cs, Equality):
                 s.add(expr == 0)
@@ -214,6 +214,12 @@ class Lambda:
             self.vs = [vs]
         self.f = f
 
+    @property
+    def free_symbols(self):
+        fvs = self.f.free_symbols
+        fvs = set.difference(fvs, set(self.vs))
+        return fvs
+
     def __repr__(self):
         return "(\u03BB {0}. {1})".format(self.vs, self.f)
 
@@ -257,6 +263,19 @@ class App:
         freshargs = list(map(lambda x : mutate_after(x, M), self.vs))
         return M(App(freshf, freshargs))
 
+    @property
+    def free_symbols(self):
+        fvs = set()
+        fvs = set.union(fvs, free_variables(self.f))
+        # print('fvs:', fvs)
+        # print('self.vs =', self.vs)
+        ls = list(map(lambda x: x.free_symbols, self.vs))
+        # print('ls = ', ls)
+        for s in ls:
+            # print('s = ', s)
+            fvs = set.union(fvs, s)
+        return fvs
+
     def subs(self, target, value):
         print('Doing subs on {}'.format(self))
         return App(substitute(target, value, self.f), list(map(lambda x: substitute(target, value, x), self.vs)))
@@ -265,6 +284,10 @@ class SymSum:
 
     def __init__(self):
         None
+
+    @property
+    def free_symbols(self):
+        return set()
 
     def __repr__(self):
         return '\u2211'
@@ -276,6 +299,10 @@ class ConcreteSum:
 
     def __init__(self):
         None
+
+    @property
+    def free_symbols(self):
+        return set()
 
     def __repr__(self):
         return '\u2211'
@@ -345,6 +372,7 @@ class PiecewiseExpression:
             for s in p.variables:
                 syms.add(s)
         return syms
+
 
     @property
     def free_symbols(self):
@@ -667,6 +695,14 @@ def concretify_sum(symsum):
     print(piecewise_sums)
     return piecewise_sums
 
+def free_variables(expr):
+    return expr.free_symbols
+
+def execute(expr, variable_values):
+    print('Executing:', expr)
+    assert(len(free_variables(expr)) == 0)
+    return beta_reduce(App(expr, variable_values))
+
 i0, j0, t = symbols("i0 j0 t")
 
 le = Lambda([i0], Set([j0], [1 <= j0, j0 <= i0]))
@@ -686,11 +722,6 @@ print(left_reduce(App(ss, [7])))
 
 res = left_reduce(App(ss, [7]))
 print('res:',res)
-# assert(False)
-
-# lifted = PiecewiseExpression()
-# lifted.add_piece(res, [True])
-# print('lifted:', lifted)
 
 ss = App(ConcreteSum(), [1, 7, f])
 print(ss)
@@ -701,6 +732,9 @@ print('Concrete')
 for p in fss.pieces:
     print(p)
     print()
+
+print('executed:', execute(fss, []))
+assert(False)
 
 i0, j0, t = symbols("i0 j0 t")
 
@@ -915,7 +949,8 @@ for k in ip.vs:
 def symmat():
     return PiecewiseExpression()
 
-LowerToeplitz = symmat()
-LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
+print('Res:', execute(ip, [10, 3, 3]))
 
+# LowerToeplitz = symmat()
+# LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
 
