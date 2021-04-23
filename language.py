@@ -80,7 +80,7 @@ def cull_pieces(I):
             for sym in cs.free_symbols:
                 varlist.append(sym)
         s = Solver()
-        print('checking: ', p.P)
+        # print('checking: ', p.P)
         for cs in p.P:
             if cs == True:
                 continue
@@ -333,7 +333,7 @@ class Piece:
             syms.add(s)
         for cs in self.P:
             for cc in cs.variables:
-                print(cc)
+                # print(cc)
                 syms.add(cc)
         return syms
 
@@ -344,7 +344,7 @@ class Piece:
             syms.add(s)
         for cs in self.P:
             for cc in cs.free_symbols:
-                print(cc)
+                # print(cc)
                 syms.add(cc)
         return syms
 
@@ -364,7 +364,7 @@ class PiecewiseExpression:
     def variables(self):
         syms = set()
         for p in self.pieces:
-            print(p)
+            # print(p)
             for s in p.variables:
                 syms.add(s)
         return syms
@@ -374,7 +374,7 @@ class PiecewiseExpression:
     def free_symbols(self):
         syms = set()
         for p in self.pieces:
-            print(p)
+            # print(p)
             for s in p.free_symbols:
                 syms.add(s)
         return syms
