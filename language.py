@@ -226,7 +226,7 @@ class Lambda:
     def subs(self, target, value):
         if target in self.vs:
             return copy.deepcopy(self)
-        print('Doing subs on {}'.format(self))
+        # print('Doing subs on {}'.format(self))
         return Lambda(self.vs, substitute(target, value, self.f))
 
 class Set:
@@ -267,17 +267,13 @@ class App:
     def free_symbols(self):
         fvs = set()
         fvs = set.union(fvs, free_variables(self.f))
-        # print('fvs:', fvs)
-        # print('self.vs =', self.vs)
         ls = list(map(lambda x: x.free_symbols, self.vs))
-        # print('ls = ', ls)
         for s in ls:
-            # print('s = ', s)
             fvs = set.union(fvs, s)
         return fvs
 
     def subs(self, target, value):
-        print('Doing subs on {}'.format(self))
+        # print('Doing subs on {}'.format(self))
         return App(substitute(target, value, self.f), list(map(lambda x: substitute(target, value, x), self.vs)))
 
 class SymSum:
@@ -416,16 +412,18 @@ class PiecewiseExpression:
 
 def beta_reduce(expr):
     if isinstance(expr, App):
-        print('Beta reducing {0}'.format(expr))
+
         f = expr.f
         vs = expr.vs
+
+        if len(vs) == 0:
+            return f
+
         if isinstance(f, Lambda):
-            # print('Beta reducing lambda {0}'.format(f))
             fresh = copy.deepcopy(f.f)
             for i in range(min(len(vs), len(f.vs))):
                 var = f.vs[i]
                 value = vs[i]
-                print('\treplacing {0} with {1} in {2}'.format(var, value, fresh))
                 fresh = substitute(var, value, fresh)
             if len(vs) == len(f.vs):
                 return fresh
@@ -696,12 +694,57 @@ def concretify_sum(symsum):
     return piecewise_sums
 
 def free_variables(expr):
-    return expr.free_symbols
+    if hasattr(expr, 'free_symbols'):
+        return expr.free_symbols
+    return set()
+
+def execute_conditions(expr):
+    assert(isinstance(expr, list))
+    for c in expr:
+        if c == False:
+            return False
+    return True
 
 def execute(expr, variable_values):
     print('Executing:', expr)
     assert(len(free_variables(expr)) == 0)
-    return beta_reduce(App(expr, variable_values))
+
+    reduced = beta_reduce(App(expr, variable_values))
+    return evaluate_expr(reduced)
+
+def evaluate_expr(reduced):
+    assert(len(free_variables(reduced)) == 0)
+
+    if isinstance(reduced, PiecewiseExpression):
+        for p in reduced.pieces:
+            if (execute_conditions(p.P)):
+                return evaluate_expr(p.f)
+        return 0
+    elif isinstance(reduced, App):
+        if isinstance(reduced.f, ConcreteSum):
+            sval = 0
+            start = evaluate_expr(reduced.vs[0])
+            end = evaluate_expr(reduced.vs[1])
+            sum_func = reduced.vs[2]
+            for value in range(start, end + 1):
+                sval += evaluate_expr(beta_reduce(App(sum_func, [value])))
+            return sval
+        else:
+            print('Unrecongnized function:', reduced.f)
+            assert(False)
+        # print('Evaluating app:', reduced)
+        # print('\tf = ', reduced.f)
+        # print('\t\tisinstance =', isinstance(reduced.f, ConcreteSum))
+        # print('\t\tisinstance =', isinstance(reduced.f, SymSum))
+        #and isinstance(reduced, ConcreteSum):
+        # assert(False)
+    elif reduced.is_constant():
+        return reduced
+    else:
+        print('Cannot evaluate {0}'.format(reduced))
+        assert(False)
+    return reduced
+
 
 i0, j0, t = symbols("i0 j0 t")
 
@@ -733,8 +776,8 @@ for p in fss.pieces:
     print(p)
     print()
 
-print('executed:', execute(fss, []))
-assert(False)
+res = execute(fss, [])
+assert(res == 28)
 
 i0, j0, t = symbols("i0 j0 t")
 
