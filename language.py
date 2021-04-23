@@ -640,6 +640,8 @@ def fm_domain_decomposition(k, all_constraints):
     return domain_decomposition
 
 def concretify_sum(symsum):
+    print('concretifying:', symsum)
+
     assert(isinstance(symsum, App))
     assert(isinstance(symsum.f, SymSum))
     assert(len(symsum.vs) == 2)
@@ -769,10 +771,10 @@ def evaluate_product(A, B):
     sepsum = separate_sum_of_pieces(ip)
     print('separated sum:', sepsum)
 
-    sepsum = concretify_sum(sepsum)
+    sepsum = mutate_after(sepsum, lambda x: concretify_sum(x) if isinstance(x, App) and isinstance(x.f, SymSum) else x)
     print('Concrete:', sepsum)
-    simplified = simplify_pieces(extract_unconditional_expression(sepsum))
-    simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
+    simplified = mutate_after(sepsum, lambda x: simplify_pieces(extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
+    simplified = mutate_after(simplified, lambda x: distribute_piece(simplify_pieces(x)) if isinstance(x, PiecewiseExpression) else x)
     print('Concrete after simplification:', simplified)
     return simplified
 
@@ -818,33 +820,6 @@ for p in ip.pieces:
 
 evaluate_product(I, I)
 print()
-# print('I:', I)
-# ip = product(I, I)
-# print('\nI*I:', ip)
-
-
-# sepsum = separate_sum_of_pieces(ip)
-# print('separated sum:', sepsum)
-
-# sepsum = concretify_sum(sepsum)
-# print('Concrete:', sepsum)
-# simplified = simplify_pieces(extract_unconditional_expression(sepsum))
-# simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
-# print('Concrete after simplification:', simplified)
-# assert(False)
-
-
-# def extract_context(pwf):
-    # assert(isinstance(pwf, PiecewiseExpression))
-    # if len(pwf.pieces) == 0:
-        # return pwf
-    # common = pwf.pieces[0]
-    # for p in pwf.pieces[1:]:
-        # common = intersection(set(p.P))
-    # print('Common context:', common)
-    # return pwf
-
-# ip = product(I, UpperTriangular)
 
 def merge_pieces(pwf):
     assert(isinstance(pwf, PiecewiseExpression))
@@ -897,8 +872,8 @@ for p in ip.pieces:
     print(p)
     print()
 
-ip = ip.subs('B', 1)
-ip = ip.subs('N', 3)
+ip = ip.subs('B', 3)
+# ip = ip.subs('N', 100)
 ip = cull_pieces(ip)
 
 print()
@@ -906,3 +881,24 @@ print('--- Pieces...')
 for p in ip.pieces:
     print(p)
     print()
+
+ds = Function("ds")
+ts = Function("ts")
+UpperBidiagonal = PiecewiseExpression()
+UpperBidiagonal.add_piece(ds(r), Bnds + [Eq(r, c)])
+UpperBidiagonal.add_piece(ts(r), Bnds + [Eq(r - 1, c)])
+
+UpperBidiagonalT= PiecewiseExpression()
+UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
+UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
+
+ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
+ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
+
+print(ip)
+print()
+for k in ip.vs:
+    print('--- Pieces...')
+    for p in k.pieces:
+        print('\t',p)
+        print()
