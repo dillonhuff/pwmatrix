@@ -82,7 +82,14 @@ def cull_pieces(I):
         s = Solver()
         print('checking: ', p.P)
         for cs in p.P:
-            expr = sympy_to_z3([N, r, c, k], cs.lhs - cs.rhs)[1]
+            if cs == True:
+                continue
+            if cs == False:
+                s.add(False)
+                # assert(False)
+                continue
+            print('cs = ', cs)
+            expr = sympy_to_z3(list(cs.free_symbols), cs.lhs - cs.rhs)[1]
             if isinstance(cs, Equality):
                 s.add(expr == 0)
             elif isinstance(cs, StrictGreaterThan):
@@ -194,6 +201,7 @@ def enumerate_orders(terms):
         orders = orders + sub_ords
 
     return orders
+
 def substitute(target, value, expr):
     return expr.subs(target, value)
 
@@ -250,6 +258,7 @@ class App:
         return M(App(freshf, freshargs))
 
     def subs(self, target, value):
+        print('Doing subs on {}'.format(self))
         return App(substitute(target, value, self.f), list(map(lambda x: substitute(target, value, x), self.vs)))
 
 class SymSum:
@@ -628,19 +637,6 @@ def fm_domain_decomposition(k, all_constraints):
             domain_decomposition.append([greatest_lower_bound_representative, least_upper_bound_representative, order_to_constraints(order) + auxiliary_constraints])
         else:
             print('\t\tk is empty')
-    # assert(False)
-
-    # domain_decomposition = []
-    # for l in lower_bounds:
-        # l_constraints = []
-        # for k in lower_bounds:
-            # l_constraints.append(k.lhs <= l.lhs)
-        # for u in upper_bounds:
-            # u_constraints = []
-            # for k in upper_bounds:
-                # u_constraints.append(k.lhs >= u.lhs)
-
-            # domain_decomposition.append([l.lhs, u.lhs, auxiliary_constraints + l_constraints + u_constraints + [l.lhs <= u.lhs]])
     return domain_decomposition
 
 def concretify_sum(symsum):
@@ -885,22 +881,28 @@ for p in ip.pieces:
     print()
 
 
-# ip = product(UpperTriangular, UpperTriangular)
-# ip = product(I, I)
-# sepsum = separate_sum_of_pieces(ip)
-# print('separated sum:', sepsum)
+Banded = PiecewiseExpression()
+B = symbols("B")
+b = Function("b")
+Banded.add_piece(b(r, c), Bnds + [1 <= B, B <= N, r - c <= B, -r + c <= B])
 
-# simplified = concretify_sum(sepsum)
-# print('# of simplified pieces = ', len(simplified.pieces))
+print('Banded', Banded)
 
-# simplified = simplify_pieces(simplified)
+ip = cull_pieces(mutate_after(evaluate_product(Banded, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 
-# simplified = simplify_pieces(extract_unconditional_expression(simplified))
-# simplified = distribute_piece(mutate_after(simplified, lambda x: simplify_pieces(x) if isinstance(x, PiecewiseExpression) else x))
-# print(simplified)
-# print()
-# print('--- Pieces...')
-# for p in simplified.pieces:
-    # print(p)
-    # print()
+print(ip)
+print()
+print('--- Pieces...')
+for p in ip.pieces:
+    print(p)
+    print()
 
+ip = ip.subs('B', 1)
+ip = ip.subs('N', 3)
+ip = cull_pieces(ip)
+
+print()
+print('--- Pieces...')
+for p in ip.pieces:
+    print(p)
+    print()
