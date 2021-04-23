@@ -444,9 +444,29 @@ def order_to_constraints(order):
         k_ranges.append(prevg < nextg)
     return k_ranges
 
+def reorganize_undefined_function(var, cs):
+    if isinstance(cs, Equality):
+        lhs = cs.lhs
+        rhs = cs.rhs
+        if isinstance(lhs, Function) and var in lhs.free_symbols:
+            print(cs)
+            assert(False)
+        elif isinstance(rhs, Function) and var in rhs.free_symbols:
+            assert(len(rhs.args) == 1)
+            print(cs)
+            to_ret = Eq(rhs.args[0], Function(rhs.func.name + '_inv')(lhs))
+            print('ret:', to_ret)
+            # assert(False)
+            return to_ret
+        else:
+            return cs
+    else:
+        return cs
+
 def separate_constraints(var, constraints):
+    print('separating:', constraints)
     constraints_no_eq = set()
-    for cs in constraints:
+    for cs in map(lambda x: reorganize_undefined_function(var, x), constraints):
         if isinstance(cs, Equality):
             constraints_no_eq.add(cs.lhs >= cs.rhs)
             constraints_no_eq.add(cs.lhs <= cs.rhs)
@@ -521,7 +541,10 @@ def separate_constraints(var, constraints):
                 print('\tunrecognized comparator')
                 assert(False)
 
-    print(isolated)
+    print('isolated:', isolated)
+    # Check that every appearance
+    # of the taret variable is on the RHS
+    # of every constraint
     for cs in isolated:
         if var in cs.free_symbols:
             assert(not var in cs.lhs.free_symbols)
@@ -786,7 +809,7 @@ print('--- Pieces of permutation matrix product...')
 for p in ip.pieces:
     print(p)
     print()
-assert(False)
+# assert(False)
 
 ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 print('--- Pieces of permutation matrix product...')
