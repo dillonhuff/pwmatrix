@@ -522,6 +522,10 @@ def separate_constraints(var, constraints):
                 assert(False)
 
     print(isolated)
+    for cs in isolated:
+        if var in cs.free_symbols:
+            assert(not var in cs.lhs.free_symbols)
+
     reisolated = set()
     for cs in isolated:
         reisolated.add(scale(-1, cs))
