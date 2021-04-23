@@ -554,6 +554,8 @@ def separate_constraints(var, constraints):
         for ec in pre_equalities[1:]:
             auxiliary.append(ec.subs(var, replacement))
 
+    for axc in auxiliary:
+        assert(not var in axc.free_symbols)
     return equalities, upper_bounds, lower_bounds, auxiliary
 
 def fm_domain_decomposition(k, all_constraints):
@@ -563,6 +565,8 @@ def fm_domain_decomposition(k, all_constraints):
     print('lb:', lower_bounds)
     print('ax:', auxiliary_constraints)
     assert(len(equalities) == 0)
+    for axc in auxiliary_constraints:
+        assert(not k in axc.free_symbols)
 
     terms_to_order = set()
     for b in upper_bounds:
@@ -773,13 +777,19 @@ Dense.add_piece(f(r, c), Bnds)
 # I.add_piece(r + c, Bnds + [Eq(r, c)])
 # print(P)
 
+ip = cull_pieces(mutate_after(evaluate_product(Dense, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+print('--- Pieces of permutation matrix product...')
+for p in ip.pieces:
+    print(p)
+    print()
+assert(False)
+
 ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 print('--- Pieces of permutation matrix product...')
 for p in ip.pieces:
     print(p)
     print()
 
-assert(False)
 
 
 
