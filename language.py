@@ -767,10 +767,13 @@ I = PiecewiseExpression()
 I.add_piece(nsimplify(0), Bnds + [r < c])
 I.add_piece(nsimplify(0), Bnds + [r > c])
 I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
+
+Dense = PiecewiseExpression()
+Dense.add_piece(f(r, c), Bnds)
 # I.add_piece(r + c, Bnds + [Eq(r, c)])
 # print(P)
 
-ip = cull_pieces(mutate_after(evaluate_product(P, I), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 print('--- Pieces of permutation matrix product...')
 for p in ip.pieces:
     print(p)
