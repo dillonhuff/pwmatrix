@@ -459,7 +459,13 @@ def reorganize_undefined_function(var, cs):
         rhs = cs.rhs
         if isinstance(lhs, Function) and var in lhs.free_symbols:
             print(cs)
-            assert(False)
+            assert(len(lhs.args) == 1)
+            print(cs)
+            to_ret = Eq(lhs.args[0], Function(lhs.func.name + '_inv')(rhs))
+            print('ret:', to_ret)
+            # assert(False)
+            return to_ret
+
         elif isinstance(rhs, Function) and var in rhs.free_symbols:
             assert(len(rhs.args) == 1)
             print(cs)
@@ -759,7 +765,8 @@ def product(A, B):
     Il = A.subs(c, k)
     Ir = B.subs(r, k)
 
-    prod = simplify_pieces(pwmul(Il, Ir))
+    # prod = simplify_pieces(pwmul(Il, Ir))
+    prod = pwmul(Il, Ir)
 
     ss = Set([k], [sympify(True)])
     return App(SymSum(), [ss, Lambda(k, prod)])
@@ -773,7 +780,9 @@ def evaluate_product(A, B):
 
     sepsum = mutate_after(sepsum, lambda x: concretify_sum(x) if isinstance(x, App) and isinstance(x.f, SymSum) else x)
     print('Concrete:', sepsum)
-    simplified = mutate_after(sepsum, lambda x: simplify_pieces(extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
+    # simplified = mutate_after(sepsum, lambda x: simplify_pieces(extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
+    # simplified = mutate_after(simplified, lambda x: distribute_piece(simplify_pieces(x)) if isinstance(x, PiecewiseExpression) else x)
+    simplified = mutate_after(sepsum, lambda x: (extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
     simplified = mutate_after(simplified, lambda x: distribute_piece(simplify_pieces(x)) if isinstance(x, PiecewiseExpression) else x)
     print('Concrete after simplification:', simplified)
     return simplified
@@ -902,3 +911,11 @@ for k in ip.vs:
     for p in k.pieces:
         print('\t',p)
         print()
+
+def symmat():
+    return PiecewiseExpression()
+
+LowerToeplitz = symmat()
+LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
+
+
