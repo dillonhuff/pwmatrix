@@ -203,6 +203,7 @@ def enumerate_orders(terms):
     return orders
 
 def substitute(target, value, expr):
+    print('Doing substitution on', expr)
     return expr.subs(target, value)
 
 class Lambda:
@@ -243,6 +244,7 @@ class Set:
             return copy.deepcopy(self)
         return Set(self.vs, list(map(lambda x: substitute(target, value, x), self.constraints)))
 
+
 class App:
 
     def __init__(self, f, vs):
@@ -250,7 +252,7 @@ class App:
         self.vs = vs
 
     def __repr__(self):
-        if self.f == '+':
+        if isinstance(self.f, SymPlus):
             return '({0})'.format(' + '.join(list(map(lambda x: str(x), self.vs))))
 
         if self.f == '-' and len(self.vs) == 2:
@@ -275,6 +277,21 @@ class App:
     def subs(self, target, value):
         # print('Doing subs on {}'.format(self))
         return App(substitute(target, value, self.f), list(map(lambda x: substitute(target, value, x), self.vs)))
+
+class SymPlus:
+
+    def __init__(self):
+        None
+
+    @property
+    def free_symbols(self):
+        return set()
+
+    def __repr__(self):
+        return '+'
+
+    def subs(self, target, value):
+        return self
 
 class SymSum:
 
@@ -707,6 +724,7 @@ def execute_conditions(expr):
 
 def execute(expr, variable_values):
     print('Executing:', expr)
+    print('free vars:', free_variables(expr))
     assert(len(free_variables(expr)) == 0)
 
     reduced = beta_reduce(App(expr, variable_values))
@@ -728,6 +746,12 @@ def evaluate_expr(reduced):
             sum_func = reduced.vs[2]
             for value in range(start, end + 1):
                 sval += evaluate_expr(beta_reduce(App(sum_func, [value])))
+            return sval
+        elif isinstance(reduced.f, SymPlus):
+            # assert(len(reduced.vs) == 2)
+            sval = 0
+            for arg in reduced.vs:
+                sval += evaluate_expr(arg)
             return sval
         else:
             print('Unrecongnized function:', reduced.f)
@@ -835,7 +859,7 @@ def separate_sum_of_pieces(ss):
             sepsum.append(App(SymSum(), [Set(domain.vs, list(domain.constraints) + list(p.P)), Lambda([var], p.f)]))
     if len(sepsum) == 1:
         return sepsum[0]
-    return App('+', sepsum)
+    return App(SymPlus(), sepsum)
 
 def product(A, B):
     r, c, k = symbols("r c k")
@@ -992,7 +1016,7 @@ for k in ip.vs:
 def symmat():
     return PiecewiseExpression()
 
-print('Res:', execute(ip, [10, 3, 3]))
+print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
 
 # LowerToeplitz = symmat()
 # LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
