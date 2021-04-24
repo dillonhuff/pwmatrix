@@ -1085,10 +1085,14 @@ print()
 for k in ip.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
     for p in k.pieces:
-        iset = to_isl_set(p.P)
         for l in k.pieces:
             if can_merge_into(p, l):
+                pset = to_isl_set(p.P)
+                lset = to_isl_set(l.P)
+                res = pset.union(lset)
+
                 print('can merge {0} into {1}'.format(p, l))
+                print('\tmerged domain:', str(res))
 
 def symmat():
     return PiecewiseExpression()
