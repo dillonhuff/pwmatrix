@@ -5,6 +5,9 @@ from z3 import Solver, sat
 from z3 import Int, Real, Sqrt
 import z3 as z3
 
+import islpy as isl
+
+
 def sympy_to_z3(sympy_var_list, sympy_exp):
     'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
 
@@ -94,7 +97,7 @@ def _sympy_to_z3_rec(var_map, e):
 
 def cull_pieces(I):
     # TODO: Replace with free variables in I
-    N, r, c, k = symbols("N r c k")
+    # N, r, c, k = symbols("N r c k")
     I_culled = PiecewiseExpression()
     for p in I.pieces:
         varlist = []
@@ -1064,54 +1067,28 @@ def can_merge_into(p0, p1):
         # print('m = ', m)
     return not (result == sat)
 
+def isl_str(p):
+    if isinstance(p, Equality):
+        return str(p.lhs) + ' = ' + str(p.rhs)
+    return str(p)
+
+def to_isl_set(p):
+    cstr = ' and '.join(map(lambda x: isl_str(x), p))
+    varstr = ', '.join(map(isl_str, (set.union(*map(free_variables, p)))))
+    setfmt = '[{0}] : {1}'.format(varstr, cstr)
+    setstr = '{' + setfmt + '}'
+    print('Converting to setstr:', setstr)
+    return isl.Set(setstr)
+
 print(ip)
 print()
 for k in ip.vs:
-    print('--- Pieces...')
+    print('--- # of Pieces = {}'.format(len(k.pieces)))
     for p in k.pieces:
+        iset = to_isl_set(p.P)
         for l in k.pieces:
             if can_merge_into(p, l):
                 print('can merge {0} into {1}'.format(p, l))
-        # print('\t',p)
-        # print()
-
-    # if len(k.pieces) == 2:
-        # p0 = k.pieces[0]
-        # p1 = k.pieces[1]
-        # print('p0 =', p0)
-
-        # f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
-        # P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
-
-        # print('p1 =', p1)
-
-        # f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
-        # P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
-
-        # print('f0 =', f0)
-        # print('P0 =', P0)
-        # print('f1 =', f1)
-        # print('P1 =', P1)
-
-        # f0ef1 = Eq(p0.f, p1.f)
-        # eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
-        # print('eq constraint =', eq_constraint)
-
-        # s = Solver()
-        # orc = z3.Or(z3.And(*P0), z3.And(*P1))
-        # print('orc =', orc)
-        # impc = z3.Implies(orc, eq_constraint)
-        # print('impc =', impc)
-
-        # nimp = z3.Not(impc)
-        # print('not imp:', nimp)
-        # s.add(nimp)
-
-        # print(s.check())
-        # m = s.model()
-        # if result == sat:
-            # print('m = ', m)
-        # assert(False)
 
 def symmat():
     return PiecewiseExpression()
