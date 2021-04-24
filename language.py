@@ -1048,6 +1048,12 @@ for k in ip.vs:
         print('P0 =', P0)
         print('f1 =', f1)
         print('P1 =', P1)
+        s = Solver()
+        s.add(Implies(z3.Or(z3.And(*P0), z3.And(*P1)), f0 == f1))
+
+        print s.check()
+        m = s.model()
+        print('m = ', m)
         assert(False)
 
 def symmat():
