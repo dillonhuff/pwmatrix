@@ -26,6 +26,16 @@ def _sympy_to_z3_rec(var_map, e):
     'recursive call for sympy_to_z3()'
 
     rv = None
+    if isinstance(e, Equality):
+        return _sympy_to_z3_rec(var_map, e.lhs) == _sympy_to_z3_rec(var_map, e.rhs)
+    elif isinstance(e, StrictGreaterThan):
+        return _sympy_to_z3_rec(var_map, e.lhs) > _sympy_to_z3_rec(var_map, e.rhs)
+    elif isinstance(e, StrictLessThan):
+        return _sympy_to_z3_rec(var_map, e.lhs) < _sympy_to_z3_rec(var_map, e.rhs)
+    elif isinstance(e, LessThan):
+        return _sympy_to_z3_rec(var_map, e.lhs) <= _sympy_to_z3_rec(var_map, e.rhs)
+    elif isinstance(e, GreaterThan):
+        return _sympy_to_z3_rec(var_map, e.lhs) >= _sympy_to_z3_rec(var_map, e.rhs)
 
     if not isinstance(e, Expr):
         raise RuntimeError("Expected sympy Expr: " + repr(e))
@@ -936,9 +946,6 @@ for p in ip.pieces:
     print(p)
     print()
 
-
-
-
 evaluate_product(I, I)
 print()
 
@@ -1024,10 +1031,28 @@ for k in ip.vs:
         print('\t',p)
         print()
 
+    if len(k.pieces) == 2:
+        p0 = k.pieces[0]
+        p1 = k.pieces[1]
+        print('p0 =', p0)
+
+        f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
+        P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
+
+        print('p1 =', p1)
+
+        f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
+        P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
+
+        print('f0 =', f0)
+        print('P0 =', P0)
+        print('f1 =', f1)
+        print('P1 =', P1)
+        assert(False)
+
 def symmat():
     return PiecewiseExpression()
 
 print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
 print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
-
 
