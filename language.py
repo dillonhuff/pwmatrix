@@ -203,7 +203,7 @@ def enumerate_orders(terms):
     return orders
 
 def substitute(target, value, expr):
-    print('Doing substitution on', expr)
+    # print('Doing substitution on', expr)
     return expr.subs(target, value)
 
 class Lambda:
@@ -723,8 +723,8 @@ def execute_conditions(expr):
     return True
 
 def execute(expr, variable_values):
-    print('Executing:', expr)
-    print('free vars:', free_variables(expr))
+    # print('Executing:', expr)
+    # print('free vars:', free_variables(expr))
     assert(len(free_variables(expr)) == 0)
 
     reduced = beta_reduce(App(expr, variable_values))
@@ -863,10 +863,16 @@ def separate_sum_of_pieces(ss):
 
 def product(A, B):
     r, c, k = symbols("r c k")
+
+    assert(r in free_variables(A))
+    assert(not k in free_variables(A))
+
+    assert(c in free_variables(B))
+    assert(not k in free_variables(B))
+
     Il = A.subs(c, k)
     Ir = B.subs(r, k)
 
-    # prod = simplify_pieces(pwmul(Il, Ir))
     prod = pwmul(Il, Ir)
 
     ss = Set([k], [sympify(True)])
@@ -1016,7 +1022,8 @@ for k in ip.vs:
 def symmat():
     return PiecewiseExpression()
 
-print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
+print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
+print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
 
 # LowerToeplitz = symmat()
 # LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
