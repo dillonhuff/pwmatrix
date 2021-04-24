@@ -1083,6 +1083,40 @@ def to_isl_set(p):
     print('Converting to setstr:', setstr)
     return isl.Set(setstr)
 
+def from_isl_set(res):
+    if num_basic_set(res) == 1:
+        print('\t\tCAN MERGE!')
+        bset = res.get_basic_sets()[0]
+        sympy_constraints = set()
+        for c in bset.get_constraints():
+            print('\t\t\t', c)
+            assert(not c.is_div_constraint())
+
+            cg = 0
+            print('id dict:', c.get_id_dict())
+            iddict = c.get_id_dict()
+            coeff_dict = c.get_coefficients_by_name()
+            print('coeff dict:', coeff_dict)
+            for v in iddict:
+                print('v =', v)
+                print('v =', v, 'val =', iddict[v])
+                if v.name in coeff_dict:
+                    cg = cg + symbols(v.name)*int(str(coeff_dict[v.name]))
+
+            print('cg =', cg)
+            cg = cg + int(str(c.get_constant_val()))
+
+            if c.is_equality():
+                sympy_constraints.add(Eq(cg, 0))
+                print('\t\t\t\t', 'eq')
+            else:
+                sympy_constraints.add(cg >= 0)
+                print('\t\t\t\t', 'geq')
+        return list(sympy_constraints)
+    else:
+        print('Cannot turn', res, 'has more than 1 basic set')
+        assert(False)
+
 print(ip)
 print()
 for k in ip.vs:
@@ -1096,35 +1130,13 @@ for k in ip.vs:
 
                 print('can merge {0} into {1}'.format(p, l))
                 print('\tmerged domain:', str(res))
+
+
                 if num_basic_set(res) == 1:
                     print('\t\tCAN MERGE!')
-                    bset = res.get_basic_sets()[0]
-                    sympy_constraints = set()
-                    for c in bset.get_constraints():
-                        print('\t\t\t', c)
-                        assert(not c.is_div_constraint())
+                    resset = from_isl_set(res)
+                    print('reset:', resset)
 
-                        cg = 0
-                        print('id dict:', c.get_id_dict())
-                        iddict = c.get_id_dict()
-                        coeff_dict = c.get_coefficients_by_name()
-                        print('coeff dict:', coeff_dict)
-                        for v in iddict:
-                            print('v =', v)
-                            print('v =', v, 'val =', iddict[v])
-                            if v.name in coeff_dict:
-                                cg = cg + symbols(v.name)*int(str(coeff_dict[v.name]))
-
-                        print('cg =', cg)
-                        cg = cg + int(str(c.get_constant_val()))
-
-                        if c.is_equality():
-                            sympy_constraints.add(Eq(cg, 0))
-                            print('\t\t\t\t', 'eq')
-                        else:
-                            sympy_constraints.add(cg >= 0)
-                            print('\t\t\t\t', 'geq')
-                    print('sympy constraints:', sympy_constraints)
 def symmat():
     return PiecewiseExpression()
 
