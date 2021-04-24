@@ -1028,50 +1028,90 @@ UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
 ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
 ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
 
+def can_merge_into(p0, p1):
+    # print('p0 =', p0)
+
+    f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
+    P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
+
+    # print('p1 =', p1)
+
+    f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
+    # P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
+
+    # print('f0 =', f0)
+    # print('P0 =', P0)
+    # print('f1 =', f1)
+    # print('P1 =', P1)
+
+    f0ef1 = Eq(p0.f, p1.f)
+    eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
+    # print('eq constraint =', eq_constraint)
+
+    s = Solver()
+    orc = z3.And(*P0)
+    # print('orc =', orc)
+    impc = z3.Implies(orc, eq_constraint)
+    # print('impc =', impc)
+
+    nimp = z3.Not(impc)
+    # print('not imp:', nimp)
+    s.add(nimp)
+
+    result = s.check()
+    if result == sat:
+        m = s.model()
+        # print('m = ', m)
+    return not (result == sat)
+
 print(ip)
 print()
 for k in ip.vs:
     print('--- Pieces...')
     for p in k.pieces:
-        print('\t',p)
-        print()
+        for l in k.pieces:
+            if can_merge_into(p, l):
+                print('can merge {0} into {1}'.format(p, l))
+        # print('\t',p)
+        # print()
 
-    if len(k.pieces) == 2:
-        p0 = k.pieces[0]
-        p1 = k.pieces[1]
-        print('p0 =', p0)
+    # if len(k.pieces) == 2:
+        # p0 = k.pieces[0]
+        # p1 = k.pieces[1]
+        # print('p0 =', p0)
 
-        f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
-        P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
+        # f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
+        # P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
 
-        print('p1 =', p1)
+        # print('p1 =', p1)
 
-        f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
-        P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
+        # f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
+        # P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
 
-        print('f0 =', f0)
-        print('P0 =', P0)
-        print('f1 =', f1)
-        print('P1 =', P1)
+        # print('f0 =', f0)
+        # print('P0 =', P0)
+        # print('f1 =', f1)
+        # print('P1 =', P1)
 
-        f0ef1 = Eq(p0.f, p1.f)
-        eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
-        print('eq constraint =', eq_constraint)
+        # f0ef1 = Eq(p0.f, p1.f)
+        # eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
+        # print('eq constraint =', eq_constraint)
 
-        s = Solver()
-        orc = z3.Or(z3.And(*P0), z3.And(*P1))
-        print('orc =', orc)
-        impc = z3.Implies(orc, eq_constraint)
-        print('impc =', impc)
+        # s = Solver()
+        # orc = z3.Or(z3.And(*P0), z3.And(*P1))
+        # print('orc =', orc)
+        # impc = z3.Implies(orc, eq_constraint)
+        # print('impc =', impc)
 
-        nimp = z3.Not(impc)
-        print('not imp:', nimp)
-        s.add(nimp)
+        # nimp = z3.Not(impc)
+        # print('not imp:', nimp)
+        # s.add(nimp)
 
-        print(s.check())
-        m = s.model()
-        print('m = ', m)
-        assert(False)
+        # print(s.check())
+        # m = s.model()
+        # if result == sat:
+            # print('m = ', m)
+        # assert(False)
 
 def symmat():
     return PiecewiseExpression()
