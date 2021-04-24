@@ -3,6 +3,7 @@ import copy
 
 from z3 import Solver, sat
 from z3 import Int, Real, Sqrt
+import z3 as z3
 
 def sympy_to_z3(sympy_var_list, sympy_exp):
     'convert a sympy expression to a z3 expression. This returns (z3_vars, z3_expression)'
@@ -58,11 +59,17 @@ def _sympy_to_z3_rec(var_map, e):
             rv = term**exponent
 
     elif isinstance(e, Function):
-        # TODO: Actually add a unique name for functions
-        rv = Int('C_func')
-        # raise RuntimeError("Function type '" + str(type(e)) + "' is not yet implemented for conversion to a z3 expresion. " + \
-                            # "Subexpression was '" + str(e) + "'.")
+        arg_list = []
+        arg_type_list = []
+        for arg in e.args:
+            arg_type_list.append(z3.IntSort())
+            arg_list.append(_sympy_to_z3_rec(var_map, arg))
 
+        arg_type_list.append(z3.IntSort())
+        F = z3.Function(e.func.name, *arg_type_list)
+        # print('F = ', F)
+        rv = F(*arg_list)
+        # print('rv = ', rv)
 
     if rv == None:
         raise RuntimeError("Type '" + str(type(e)) + "' is not yet implemented for conversion to a z3 expresion. " + \
@@ -887,8 +894,6 @@ def evaluate_product(A, B):
 
     sepsum = mutate_after(sepsum, lambda x: concretify_sum(x) if isinstance(x, App) and isinstance(x.f, SymSum) else x)
     print('Concrete:', sepsum)
-    # simplified = mutate_after(sepsum, lambda x: simplify_pieces(extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
-    # simplified = mutate_after(simplified, lambda x: distribute_piece(simplify_pieces(x)) if isinstance(x, PiecewiseExpression) else x)
     simplified = mutate_after(sepsum, lambda x: (extract_unconditional_expression(x)) if isinstance(x, PiecewiseExpression) else x)
     simplified = mutate_after(simplified, lambda x: distribute_piece(simplify_pieces(x)) if isinstance(x, PiecewiseExpression) else x)
     print('Concrete after simplification:', simplified)
@@ -1025,6 +1030,4 @@ def symmat():
 print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
 print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
 
-# LowerToeplitz = symmat()
-# LowerToeplitz.add_piece(ds(r - c), Bnds + [r >= c])
 
