@@ -1067,6 +1067,9 @@ def can_merge_into(p0, p1):
         # print('m = ', m)
     return not (result == sat)
 
+def num_basic_set(p):
+    return len(p.get_basic_sets())
+
 def isl_str(p):
     if isinstance(p, Equality):
         return str(p.lhs) + ' = ' + str(p.rhs)
@@ -1089,10 +1092,12 @@ for k in ip.vs:
             if can_merge_into(p, l):
                 pset = to_isl_set(p.P)
                 lset = to_isl_set(l.P)
-                res = pset.union(lset)
+                res = pset.union(lset).coalesce()
 
                 print('can merge {0} into {1}'.format(p, l))
                 print('\tmerged domain:', str(res))
+                if num_basic_set(res) == 1:
+                    print('\t\tCAN MERGE!')
 
 def symmat():
     return PiecewiseExpression()
