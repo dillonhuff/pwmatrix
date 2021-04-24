@@ -25,6 +25,11 @@ def sympy_to_z3(sympy_var_list, sympy_exp):
 def _sympy_to_z3_rec(var_map, e):
     'recursive call for sympy_to_z3()'
 
+    if e == True:
+        return True
+    if e == False:
+        return False
+
     rv = None
     if isinstance(e, Equality):
         return _sympy_to_z3_rec(var_map, e.lhs) == _sympy_to_z3_rec(var_map, e.rhs)
@@ -1048,10 +1053,22 @@ for k in ip.vs:
         print('P0 =', P0)
         print('f1 =', f1)
         print('P1 =', P1)
-        s = Solver()
-        s.add(Implies(z3.Or(z3.And(*P0), z3.And(*P1)), f0 == f1))
 
-        print s.check()
+        f0ef1 = Eq(p0.f, p1.f)
+        eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
+        print('eq constraint =', eq_constraint)
+
+        s = Solver()
+        orc = z3.Or(z3.And(*P0), z3.And(*P1))
+        print('orc =', orc)
+        impc = z3.Implies(orc, eq_constraint)
+        print('impc =', impc)
+
+        nimp = z3.Not(impc)
+        print('not imp:', nimp)
+        s.add(nimp)
+
+        print(s.check())
         m = s.model()
         print('m = ', m)
         assert(False)
