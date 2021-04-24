@@ -1080,38 +1080,38 @@ def to_isl_set(p):
     varstr = ', '.join(map(isl_str, (set.union(*map(free_variables, p)))))
     setfmt = '[{0}] : {1}'.format(varstr, cstr)
     setstr = '{' + setfmt + '}'
-    print('Converting to setstr:', setstr)
+    # print('Converting to setstr:', setstr)
     return isl.Set(setstr)
 
 def from_isl_set(res):
     if num_basic_set(res) == 1:
-        print('\t\tCAN MERGE!')
+        # print('\t\tCAN MERGE!')
         bset = res.get_basic_sets()[0]
         sympy_constraints = set()
         for c in bset.get_constraints():
-            print('\t\t\t', c)
+            # print('\t\t\t', c)
             assert(not c.is_div_constraint())
 
             cg = 0
-            print('id dict:', c.get_id_dict())
+            # print('id dict:', c.get_id_dict())
             iddict = c.get_id_dict()
             coeff_dict = c.get_coefficients_by_name()
-            print('coeff dict:', coeff_dict)
+            # print('coeff dict:', coeff_dict)
             for v in iddict:
-                print('v =', v)
-                print('v =', v, 'val =', iddict[v])
+                # print('v =', v)
+                # print('v =', v, 'val =', iddict[v])
                 if v.name in coeff_dict:
                     cg = cg + symbols(v.name)*int(str(coeff_dict[v.name]))
 
-            print('cg =', cg)
+            # print('cg =', cg)
             cg = cg + int(str(c.get_constant_val()))
 
             if c.is_equality():
                 sympy_constraints.add(Eq(cg, 0))
-                print('\t\t\t\t', 'eq')
+                # print('\t\t\t\t', 'eq')
             else:
                 sympy_constraints.add(cg >= 0)
-                print('\t\t\t\t', 'geq')
+                # print('\t\t\t\t', 'geq')
         return list(sympy_constraints)
     else:
         print('Cannot turn', res, 'has more than 1 basic set')
@@ -1121,21 +1121,29 @@ print(ip)
 print()
 for k in ip.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
+    remaining_pieces = set()
     for p in k.pieces:
-        for l in k.pieces:
+        if len(remaining_pieces) == 0:
+            remaining_pieces.add(p)
+        print(p)
+        merge_site = None
+        for l in remaining_pieces:
             if can_merge_into(p, l):
                 pset = to_isl_set(p.P)
                 lset = to_isl_set(l.P)
                 res = pset.union(lset).coalesce()
 
-                print('can merge {0} into {1}'.format(p, l))
-                print('\tmerged domain:', str(res))
-
-
                 if num_basic_set(res) == 1:
-                    print('\t\tCAN MERGE!')
                     resset = from_isl_set(res)
-                    print('reset:', resset)
+                    merge_site = resset
+                    merge_l = l
+        if merge_site != None:
+            remaining_pieces.remove(merge_l)
+            remaining_pieces.add(Piece(merge_l.f, resset))
+
+    print('---- After piece merging')
+    for k in remaining_pieces:
+        print(p)
 
 def symmat():
     return PiecewiseExpression()
