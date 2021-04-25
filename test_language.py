@@ -83,10 +83,15 @@ print('--- Pieces of permutation matrix product...')
 for p in ip.pieces:
     print(p)
     print()
-# assert(False)
 
 merged_ip = merge_pieces(ip)
 assert(len(merged_ip.pieces) == 1)
+
+print('--- Pieces of permutation matrix product after merging...')
+for p in merged_ip.pieces:
+    print(p)
+    print()
+# assert(False)
 
 # evaluate_product(I, I)
 print()
