@@ -1,6 +1,8 @@
 from sympy import *
 import copy
 
+# import networkx as nx
+
 from z3 import Solver, sat
 from z3 import Int, Real, Sqrt
 import z3 as z3
@@ -848,11 +850,60 @@ def evaluate_product(A, B):
     return simplified
 
 
+def is_concrete_sum(f):
+    if not isinstance(f, App):
+        return False
+    if isinstance(f.f, ConcreteSum):
+        return True
+
 def can_merge_into(p0, p1):
+    if is_concrete_sum(p0.f) != is_concrete_sum(p1.f):
+        return False
+
+    if is_concrete_sum(p0.f) and is_concrete_sum(p1.f):
+        return p0.f == p1.f
+        # f0expr = p0.f.vs[2].f
+        # f0lb = p0.f.vs[0]
+        # f0ub = p0.f.vs[1]
+
+        # f1expr = p1.f.vs[2].f
+        # f1lb = p1.f.vs[0]
+        # f1ub = p1.f.vs[1]
+
+        # print('f0 expr:', f0expr)
+        # print('f1 expr:', f1expr)
+
+        # f0 = sympy_to_z3(list(f0expr.free_symbols), f0expr)[1]
+        # l0 = sympy_to_z3(list(f0lb.free_symbols), f0lb)[1]
+        # u0 = sympy_to_z3(list(f0ub.free_symbols), f0ub)[1]
+
+        # f1 = sympy_to_z3(list(f1expr.free_symbols), f1expr)[1]
+        # l1 = sympy_to_z3(list(f1lb.free_symbols), f1lb)[1]
+        # u1 = sympy_to_z3(list(f1ub.free_symbols), f1ub)[1]
+
+        # P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
+
+        # print('lb0 =', l0)
+        # print('lb1 =', l1)
+
+        # assert(False)
+        # s = Solver()
+        # orc = z3.And(*P0)
+        # impc = z3.Implies(orc, eq_constraint)
+
+        # nimp = z3.Not(impc)
+        # s.add(nimp)
+
+        # result = s.check()
+        # if result == sat:
+            # m = s.model()
+        # return not (result == sat)
+
     f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
     P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
 
     f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
+
 
     f0ef1 = Eq(p0.f, p1.f)
     eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
@@ -919,45 +970,47 @@ def from_isl_set(res):
         print('Cannot turn', res, 'has more than 1 basic set')
         assert(False)
 
-def merge_pieces(ip):
-    sums = []
-    for k in ip.vs:
-        print('--- # of Pieces = {}'.format(len(k.pieces)))
-        remaining_pieces = set()
-        for p in k.pieces:
-            if len(remaining_pieces) == 0:
-                remaining_pieces.add(p)
-                continue
-            print(p)
-            merge_site = None
-            merge_l = None
-            for l in remaining_pieces:
-                if can_merge_into(p, l):
-                    pset = to_isl_set(p.P)
-                    lset = to_isl_set(l.P)
-                    res = pset.union(lset).coalesce()
+def merge_pieces_pw(k):
+    assert(isinstance(k, PiecewiseExpression))
 
-                    if num_basic_set(res) == 1:
-                        resset = from_isl_set(res)
-                        merge_site = resset
-                        merge_l = l
-                        break
-                else:
-                    print('Cannot merge {0} into {1}'.format(p, l))
-                    # assert(False)
-            if merge_site != None:
-                remaining_pieces.remove(merge_l)
-                remaining_pieces.add(Piece(merge_l.f, resset))
+    print('--- # of Pieces = {}'.format(len(k.pieces)))
+    remaining_pieces = set()
+    for p in k.pieces:
+        if len(remaining_pieces) == 0:
+            remaining_pieces.add(p)
+            continue
+        print(p)
+        merge_site = None
+        merge_l = None
+        for l in remaining_pieces:
+            if can_merge_into(p, l):
+                pset = to_isl_set(p.P)
+                lset = to_isl_set(l.P)
+                res = pset.union(lset).coalesce()
+
+                if num_basic_set(res) == 1:
+                    resset = from_isl_set(res)
+                    merge_site = resset
+                    merge_l = l
+                    break
             else:
-                remaining_pieces.add(p)
+                print('Cannot merge {0} into {1}'.format(p, l))
+                # assert(False)
+        if merge_site != None:
+            remaining_pieces.remove(merge_l)
+            remaining_pieces.add(Piece(merge_l.f, resset))
+        else:
+            remaining_pieces.add(p)
 
-        print('---- After piece merging')
-        kexpr = PiecewiseExpression()
-        for k in remaining_pieces:
-            print(k)
-            kexpr.add_piece(k.f, k.P)
-        sums.append(kexpr)
-    return App(SymPlus(), sums)
+    print('---- After piece merging')
+    kexpr = PiecewiseExpression()
+    for k in remaining_pieces:
+        print(k)
+        kexpr.add_piece(k.f, k.P)
+    return kexpr
+
+def merge_pieces(ip):
+    return mutate_after(ip, lambda x: merge_pieces_pw(x) if isinstance(x, PiecewiseExpression) else x)
         
 def symmat():
     return PiecewiseExpression()

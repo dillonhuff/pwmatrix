@@ -146,7 +146,7 @@ for k in merged.vs:
     for p in k.pieces:
         print(p)
         print()
-assert(False)
+# assert(False)
 
 ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
 merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
@@ -183,3 +183,9 @@ for p in ip.pieces:
     print(p)
     print()
 
+ip = merge_pieces(ip)
+print()
+print('--- Pieces...')
+for p in ip.pieces:
+    print(p)
+    print()
