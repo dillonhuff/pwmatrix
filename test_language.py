@@ -57,18 +57,17 @@ I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 Dense = PiecewiseExpression()
 Dense.add_piece(f(r, c), Bnds)
 
-ip = cull_pieces(mutate_after(evaluate_product(Dense, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
-print('--- Pieces of permutation matrix product...')
-for p in ip.pieces:
-    print(p)
-    print()
-# assert(False)
+# ip = cull_pieces(mutate_after(evaluate_product(Dense, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+# print('--- Pieces of permutation matrix product...')
+# for p in ip.pieces:
+    # print(p)
+    # print()
 
-ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
-print('--- Pieces of permutation matrix product...')
-for p in ip.pieces:
-    print(p)
-    print()
+# ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+# print('--- Pieces of permutation matrix product...')
+# for p in ip.pieces:
+    # print(p)
+    # print()
 
 # evaluate_product(I, I)
 print()
@@ -109,20 +108,58 @@ print('concrete results', r)
 
 r, c = symbols("r c")
 N = symbols("N")
-ip = cull_pieces(mutate_after(evaluate_product(I, UpperTriangular), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+# ip = cull_pieces(mutate_after(evaluate_product(I, UpperTriangular), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 
-print(ip)
-print()
-print('--- Pieces...')
-for p in ip.pieces:
-    print(p)
-    print()
+# print(ip)
+# print()
+# print('--- Pieces...')
+# for p in ip.pieces:
+    # print(p)
+    # print()
 
 
 Banded = PiecewiseExpression()
 B = symbols("B")
 b = Function("b")
 Banded.add_piece(b(r, c), Bnds + [1 <= B, B <= N, r - c <= B, -r + c <= B])
+
+ds = Function("ds")
+ts = Function("ts")
+UpperBidiagonal = PiecewiseExpression()
+UpperBidiagonal.add_piece(ds(r), Bnds + [Eq(r, c)])
+UpperBidiagonal.add_piece(ts(r), Bnds + [Eq(r - 1, c)])
+
+UpperBidiagonalT= PiecewiseExpression()
+UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
+UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
+
+ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
+ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
+print(ip)
+print()
+
+merged = merge_pieces(ip) # App(SymPlus(), sums)
+print('ip =', ip)
+
+for k in merged.vs:
+    print('--- # of Pieces = {}'.format(len(k.pieces)))
+    for p in k.pieces:
+        print(p)
+        print()
+
+ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
+merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
+print('ip11     =', ip11)
+print('merged11 =', merged11) 
+assert(ip11 == merged11)
+
+ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
+merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
+assert(ip43 == merged43)
+
+ip34 = execute(Lambda([N, r, c], ip), [10, 3, 4])
+merged34 = execute(Lambda([N, r, c], merged), [10, 3, 4])
+assert(ip34 == merged34)
 
 print('Banded', Banded)
 
@@ -144,43 +181,4 @@ print('--- Pieces...')
 for p in ip.pieces:
     print(p)
     print()
-
-ds = Function("ds")
-ts = Function("ts")
-UpperBidiagonal = PiecewiseExpression()
-UpperBidiagonal.add_piece(ds(r), Bnds + [Eq(r, c)])
-UpperBidiagonal.add_piece(ts(r), Bnds + [Eq(r - 1, c)])
-
-UpperBidiagonalT= PiecewiseExpression()
-UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
-UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
-
-def test_ip():
-    ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
-    ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
-    print(ip)
-    print()
-
-    merged = merge_pieces(ip) # App(SymPlus(), sums)
-    print('ip =', ip)
-
-    for k in merged.vs:
-        print('--- # of Pieces = {}'.format(len(k.pieces)))
-        for p in k.pieces:
-            print(p)
-            print()
-
-    ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
-    merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
-    print('ip11     =', ip11)
-    print('merged11 =', merged11) 
-    assert(ip11 == merged11)
-
-    ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
-    merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
-    assert(ip43 == merged43)
-
-    ip34 = execute(Lambda([N, r, c], ip), [10, 3, 4])
-    merged34 = execute(Lambda([N, r, c], merged), [10, 3, 4])
-    assert(ip34 == merged34)
 

@@ -948,6 +948,8 @@ def merge_pieces(ip):
             if merge_site != None:
                 remaining_pieces.remove(merge_l)
                 remaining_pieces.add(Piece(merge_l.f, resset))
+            else:
+                remaining_pieces.add(p)
 
         print('---- After piece merging')
         kexpr = PiecewiseExpression()
