@@ -70,7 +70,7 @@ for p in ip.pieces:
     print(p)
     print()
 
-evaluate_product(I, I)
+# evaluate_product(I, I)
 print()
 i0, j0, t = symbols("i0 j0 t")
 
@@ -155,33 +155,32 @@ UpperBidiagonalT= PiecewiseExpression()
 UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
 UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
 
-ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
-ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
-print(ip)
-print()
+def test_ip():
+    ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
+    ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
+    print(ip)
+    print()
 
+    merged = merge_pieces(ip) # App(SymPlus(), sums)
+    print('ip =', ip)
 
-merged = merge_pieces(ip) # App(SymPlus(), sums)
-print('ip =', ip)
+    for k in merged.vs:
+        print('--- # of Pieces = {}'.format(len(k.pieces)))
+        for p in k.pieces:
+            print(p)
+            print()
 
-for k in merged.vs:
-    print('--- # of Pieces = {}'.format(len(k.pieces)))
-    for p in k.pieces:
-        print(p)
-        print()
-# assert(False)
+    ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
+    merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
+    print('ip11     =', ip11)
+    print('merged11 =', merged11) 
+    assert(ip11 == merged11)
 
-ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
-merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
-print('ip11     =', ip11)
-print('merged11 =', merged11) 
-assert(ip11 == merged11)
+    ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
+    merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
+    assert(ip43 == merged43)
 
-ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
-merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
-assert(ip43 == merged43)
-
-ip34 = execute(Lambda([N, r, c], ip), [10, 3, 4])
-merged34 = execute(Lambda([N, r, c], merged), [10, 3, 4])
-assert(ip34 == merged34)
+    ip34 = execute(Lambda([N, r, c], ip), [10, 3, 4])
+    merged34 = execute(Lambda([N, r, c], merged), [10, 3, 4])
+    assert(ip34 == merged34)
 
