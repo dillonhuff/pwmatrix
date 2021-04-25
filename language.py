@@ -1119,6 +1119,8 @@ def from_isl_set(res):
 
 print(ip)
 print()
+
+sums = []
 for k in ip.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
     remaining_pieces = set()
@@ -1142,8 +1144,22 @@ for k in ip.vs:
             remaining_pieces.add(Piece(merge_l.f, resset))
 
     print('---- After piece merging')
+    kexpr = PiecewiseExpression()
     for k in remaining_pieces:
         print(p)
+        kexpr.add_piece(k.f, k.P)
+    sums.append(kexpr)
+
+ip = App(SymPlus(), sums)
+print('ip =', ip)
+assert(False)
+
+# for k in ip.vs:
+    # print('--- # of Pieces = {}'.format(len(k.pieces)))
+    # remaining_pieces = set()
+    # for p in k.pieces:
+        # print(p)
+        # print()
 
 def symmat():
     return PiecewiseExpression()
