@@ -1127,6 +1127,7 @@ for k in ip.vs:
     for p in k.pieces:
         if len(remaining_pieces) == 0:
             remaining_pieces.add(p)
+            continue
         print(p)
         merge_site = None
         for l in remaining_pieces:
@@ -1139,6 +1140,7 @@ for k in ip.vs:
                     resset = from_isl_set(res)
                     merge_site = resset
                     merge_l = l
+                    break
         if merge_site != None:
             remaining_pieces.remove(merge_l)
             remaining_pieces.add(Piece(merge_l.f, resset))
@@ -1152,14 +1154,14 @@ for k in ip.vs:
 
 ip = App(SymPlus(), sums)
 print('ip =', ip)
-assert(False)
+# assert(False)
 
-# for k in ip.vs:
-    # print('--- # of Pieces = {}'.format(len(k.pieces)))
-    # remaining_pieces = set()
-    # for p in k.pieces:
-        # print(p)
-        # print()
+for k in ip.vs:
+    print('--- # of Pieces = {}'.format(len(k.pieces)))
+    remaining_pieces = set()
+    for p in k.pieces:
+        print(p)
+        print()
 
 def symmat():
     return PiecewiseExpression()
