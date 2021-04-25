@@ -776,7 +776,9 @@ def evaluate_expr(reduced):
             # assert(len(reduced.vs) == 2)
             sval = 0
             for arg in reduced.vs:
+                print('\tadding', arg)
                 sval += evaluate_expr(arg)
+                print('\tsval =', sval)
             return sval
         else:
             print('Unrecongnized function:', reduced.f)
@@ -1130,6 +1132,7 @@ for k in ip.vs:
             continue
         print(p)
         merge_site = None
+        merge_l = None
         for l in remaining_pieces:
             if can_merge_into(p, l):
                 pset = to_isl_set(p.P)
@@ -1141,6 +1144,9 @@ for k in ip.vs:
                     merge_site = resset
                     merge_l = l
                     break
+            else:
+                print('Cannot merge {0} into {1}'.format(p, l))
+                # assert(False)
         if merge_site != None:
             remaining_pieces.remove(merge_l)
             remaining_pieces.add(Piece(merge_l.f, resset))
@@ -1148,7 +1154,7 @@ for k in ip.vs:
     print('---- After piece merging')
     kexpr = PiecewiseExpression()
     for k in remaining_pieces:
-        print(p)
+        print(k)
         kexpr.add_piece(k.f, k.P)
     sums.append(kexpr)
 
@@ -1158,7 +1164,6 @@ print('ip =', ip)
 
 for k in ip.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
-    remaining_pieces = set()
     for p in k.pieces:
         print(p)
         print()
@@ -1166,6 +1171,8 @@ for k in ip.vs:
 def symmat():
     return PiecewiseExpression()
 
+print('Res:', execute(Lambda([N, r, c], ip), [10, 1, 1]))
+print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
 print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
 print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
 
