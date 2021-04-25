@@ -970,21 +970,30 @@ def from_isl_set(res):
         print('Cannot turn', res, 'has more than 1 basic set')
         assert(False)
 
+def try_to_coalesce(pi, pj):
+    pset = to_isl_set(pi)
+    lset = to_isl_set(pj)
+    res = pset.union(lset).coalesce()
+
+    if num_basic_set(res) == 1:
+        resset = from_isl_set(res)
+        return resset
+    return None
+    
 def try_to_find_a_piece_to_merge(pieces):
     merged_a_piece = False
     for pi in pieces:
         for pj in pieces:
             if pi != pj:
                 if can_merge_into(pi, pj):
-                    pset = to_isl_set(pi.P)
-                    lset = to_isl_set(pj.P)
-                    res = pset.union(lset).coalesce()
+                    resset = try_to_coalesce(pi.P, pj.P)
 
-                    if num_basic_set(res) == 1:
+                    # if num_basic_set(res) == 1:
+                    if resset != None:
+                        # resset = from_isl_set(res)
                         pieces.remove(pi)
                         pieces.remove(pj)
 
-                        resset = from_isl_set(res)
                         pieces.add(Piece(pj.f, resset))
 
                         merged_a_piece = True
@@ -1007,41 +1016,6 @@ def merge_pieces_pw(k):
         print(k)
         kexpr.add_piece(k.f, k.P)
     return kexpr
-
-    # print('--- # of Pieces = {}'.format(len(k.pieces)))
-    # remaining_pieces = set()
-    # for p in k.pieces:
-        # if len(remaining_pieces) == 0:
-            # remaining_pieces.add(p)
-            # continue
-        # print(p)
-        # merge_site = None
-        # merge_l = None
-        # for l in remaining_pieces:
-            # if can_merge_into(p, l):
-                # pset = to_isl_set(p.P)
-                # lset = to_isl_set(l.P)
-                # res = pset.union(lset).coalesce()
-
-                # if num_basic_set(res) == 1:
-                    # resset = from_isl_set(res)
-                    # merge_site = resset
-                    # merge_l = l
-                    # break
-            # else:
-                # print('Cannot merge {0} into {1}'.format(p, l))
-        # if merge_site != None:
-            # remaining_pieces.remove(merge_l)
-            # remaining_pieces.add(Piece(merge_l.f, resset))
-        # else:
-            # remaining_pieces.add(p)
-
-    # print('---- After piece merging')
-    # kexpr = PiecewiseExpression()
-    # for k in remaining_pieces:
-        # print(k)
-        # kexpr.add_piece(k.f, k.P)
-    # return kexpr
 
 def merge_pieces(ip):
     return mutate_after(ip, lambda x: merge_pieces_pw(x) if isinstance(x, PiecewiseExpression) else x)

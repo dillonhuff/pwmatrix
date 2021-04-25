@@ -38,6 +38,7 @@ f = Function("f")
 r, c = symbols("r c")
 N = symbols("N")
 Bnds = [1 <= r, r <= N, 1 <= c, c <= N]
+
 UpperTriangular = PiecewiseExpression()
 UpperTriangular.add_piece(nsimplify(f(r, c)), Bnds + [r <= c])
 UpperTriangular.add_piece(nsimplify(0), Bnds + [r > c])
@@ -77,11 +78,15 @@ UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
     # print(p)
     # print()
 
-# ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
-# print('--- Pieces of permutation matrix product...')
-# for p in ip.pieces:
-    # print(p)
-    # print()
+ip = cull_pieces(mutate_after(evaluate_product(P, Dense), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+print('--- Pieces of permutation matrix product...')
+for p in ip.pieces:
+    print(p)
+    print()
+# assert(False)
+
+# merged_ip = merge_pieces(ip)
+# assert(len(merged_ip.pieces) == 1)
 
 # evaluate_product(I, I)
 print()
