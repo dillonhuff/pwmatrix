@@ -164,11 +164,12 @@ print()
 merged = merge_pieces(ip) # App(SymPlus(), sums)
 print('ip =', ip)
 
-for k in ip.vs:
+for k in merged.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
     for p in k.pieces:
         print(p)
         print()
+# assert(False)
 
 ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
 merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])

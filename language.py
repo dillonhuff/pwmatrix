@@ -848,65 +848,25 @@ def evaluate_product(A, B):
     return simplified
 
 
-# def merge_pieces(pwf):
-    # assert(isinstance(pwf, PiecewiseExpression))
-    # merged = PiecewiseExpression()
-    # for i in range(len(pwf.pieces)):
-        # a = pwf.pieces[i]
-        # if len(merged.pieces) == 0:
-            # merged.add_piece(a.f, a.P)
-        # else:
-            # found_merger = False
-            # for b in merged.pieces:
-                # if a.f == b.f:
-                    # print('\tmight be able to unify:', a, 'and', b)
-                    # common_constraints = set.intersection(set(a.P), set(b.P))
-                    # print('\t\tcommon constraints:', common_constraints)
-                    # a_unique = set.difference(set(a.P), common_constraints)
-                    # b_unique = set.difference(set(b.P), common_constraints)
-                    # print('\t\ta unique:', a_unique)
-                    # print('\t\tb unique:', b_unique)
-                    # if len(a_unique) == 1 and len(b_unique) == 1 and (not isinstance(a_unique[0], Equality) or not isinstance(b_unique[0], Equality)):
-                        # found_merger = True
-                        # assert(False)
-            # if not found_merger:
-                # merged.add_piece(a.f, a.P)
-    # return merged
-
 def can_merge_into(p0, p1):
-    # print('p0 =', p0)
-
     f0 = sympy_to_z3(list(p0.f.free_symbols), p0.f)[1]
     P0 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p0.P))
 
-    # print('p1 =', p1)
-
     f1 = sympy_to_z3(list(p1.f.free_symbols), p1.f)[1]
-    # P1 = list(map(lambda x: sympy_to_z3(list(x.free_symbols), x)[1], p1.P))
-
-    # print('f0 =', f0)
-    # print('P0 =', P0)
-    # print('f1 =', f1)
-    # print('P1 =', P1)
 
     f0ef1 = Eq(p0.f, p1.f)
     eq_constraint = (sympy_to_z3(f0ef1.free_symbols, f0ef1))[1]
-    # print('eq constraint =', eq_constraint)
 
     s = Solver()
     orc = z3.And(*P0)
-    # print('orc =', orc)
     impc = z3.Implies(orc, eq_constraint)
-    # print('impc =', impc)
 
     nimp = z3.Not(impc)
-    # print('not imp:', nimp)
     s.add(nimp)
 
     result = s.check()
     if result == sat:
         m = s.model()
-        # print('m = ', m)
     return not (result == sat)
 
 def num_basic_set(p):
