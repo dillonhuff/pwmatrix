@@ -162,43 +162,8 @@ ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpress
 print(ip)
 print()
 
-sums = []
-for k in ip.vs:
-    print('--- # of Pieces = {}'.format(len(k.pieces)))
-    remaining_pieces = set()
-    for p in k.pieces:
-        if len(remaining_pieces) == 0:
-            remaining_pieces.add(p)
-            continue
-        print(p)
-        merge_site = None
-        merge_l = None
-        for l in remaining_pieces:
-            if can_merge_into(p, l):
-                pset = to_isl_set(p.P)
-                lset = to_isl_set(l.P)
-                res = pset.union(lset).coalesce()
 
-                if num_basic_set(res) == 1:
-                    resset = from_isl_set(res)
-                    merge_site = resset
-                    merge_l = l
-                    break
-            else:
-                print('Cannot merge {0} into {1}'.format(p, l))
-                # assert(False)
-        if merge_site != None:
-            remaining_pieces.remove(merge_l)
-            remaining_pieces.add(Piece(merge_l.f, resset))
-
-    print('---- After piece merging')
-    kexpr = PiecewiseExpression()
-    for k in remaining_pieces:
-        print(k)
-        kexpr.add_piece(k.f, k.P)
-    sums.append(kexpr)
-
-ip = App(SymPlus(), sums)
+merged = merge_pieces(ip) # App(SymPlus(), sums)
 print('ip =', ip)
 # assert(False)
 
@@ -211,9 +176,27 @@ for k in ip.vs:
 def symmat():
     return PiecewiseExpression()
 
-print('Res:', execute(Lambda([N, r, c], ip), [10, 1, 1]))
-print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
-print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
-print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
+ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
+merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
+print('ip11     =', ip11)
+print('merged11 =', merged11) 
+assert(ip11 == merged11)
 
-# this is a test
+ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
+merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
+assert(ip43 == merged43)
+
+ip43 = execute(Lambda([N, r, c], ip), [10, 3, 4])
+merged43 = execute(Lambda([N, r, c], merged), [10, 3, 4])
+assert(ip43 == merged43)
+
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
+
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 1, 1]))
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
+# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
+
+# # this is a test
