@@ -57,6 +57,20 @@ I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 Dense = PiecewiseExpression()
 Dense.add_piece(f(r, c), Bnds)
 
+Banded = PiecewiseExpression()
+B = symbols("B")
+b = Function("b")
+Banded.add_piece(b(r, c), Bnds + [1 <= B, B <= N, r - c <= B, -r + c <= B])
+
+ds = Function("ds")
+ts = Function("ts")
+UpperBidiagonal = PiecewiseExpression()
+UpperBidiagonal.add_piece(ds(r), Bnds + [Eq(r, c)])
+UpperBidiagonal.add_piece(ts(r), Bnds + [Eq(r - 1, c)])
+
+UpperBidiagonalT= PiecewiseExpression()
+UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
+UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
 # ip = cull_pieces(mutate_after(evaluate_product(Dense, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 # print('--- Pieces of permutation matrix product...')
 # for p in ip.pieces:
@@ -117,22 +131,6 @@ N = symbols("N")
     # print(p)
     # print()
 
-
-Banded = PiecewiseExpression()
-B = symbols("B")
-b = Function("b")
-Banded.add_piece(b(r, c), Bnds + [1 <= B, B <= N, r - c <= B, -r + c <= B])
-
-ds = Function("ds")
-ts = Function("ts")
-UpperBidiagonal = PiecewiseExpression()
-UpperBidiagonal.add_piece(ds(r), Bnds + [Eq(r, c)])
-UpperBidiagonal.add_piece(ts(r), Bnds + [Eq(r - 1, c)])
-
-UpperBidiagonalT= PiecewiseExpression()
-UpperBidiagonalT.add_piece(ds(c), Bnds + [Eq(c, r)])
-UpperBidiagonalT.add_piece(ts(c), Bnds + [Eq(c - 1, r)])
-
 ip = mutate_after(evaluate_product(UpperBidiagonalT, UpperBidiagonal), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x)
 ip = mutate_after(ip, lambda x: cull_pieces(x) if isinstance(x, PiecewiseExpression) else x)
 print(ip)
@@ -146,7 +144,6 @@ for k in merged.vs:
     for p in k.pieces:
         print(p)
         print()
-# assert(False)
 
 ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
 merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
