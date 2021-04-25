@@ -91,6 +91,20 @@ print('--- Pieces of permutation matrix product after merging...')
 for p in merged_ip.pieces:
     print(p)
     print()
+
+ip = cull_pieces(mutate_after(evaluate_product(merged_ip, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
+print('--- Pieces of permutation matrix product...')
+for p in ip.pieces:
+    print(p)
+    print()
+
+merged_ip = merge_pieces(ip)
+print('--- Pieces of permutation matrix product after merging...')
+for p in merged_ip.pieces:
+    print(p)
+    print()
+assert(len(merged_ip.pieces) == 1)
+
 # assert(False)
 
 # evaluate_product(I, I)
