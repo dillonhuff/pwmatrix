@@ -173,9 +173,6 @@ for k in ip.vs:
         print(p)
         print()
 
-def symmat():
-    return PiecewiseExpression()
-
 ip11 = execute(Lambda([N, r, c], ip), [10, 1, 1])
 merged11 = execute(Lambda([N, r, c], merged), [10, 1, 1])
 print('ip11     =', ip11)
@@ -190,13 +187,3 @@ ip43 = execute(Lambda([N, r, c], ip), [10, 3, 4])
 merged43 = execute(Lambda([N, r, c], merged), [10, 3, 4])
 assert(ip43 == merged43)
 
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
-
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 1, 1]))
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 3]))
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 4, 3]))
-# print('Res:', execute(Lambda([N, r, c], ip), [10, 3, 4]))
-
-# # this is a test

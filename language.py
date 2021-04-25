@@ -997,4 +997,6 @@ def merge_pieces(ip):
         sums.append(kexpr)
     return App(SymPlus(), sums)
         
+def symmat():
+    return PiecewiseExpression()
 
