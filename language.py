@@ -970,13 +970,39 @@ def from_isl_set(res):
         print('Cannot turn', res, 'has more than 1 basic set')
         assert(False)
 
+def function_applications(pi):
+    pifuncs = set()
+    for cs in pi:
+        for a in cs.atoms(Function):
+            pifuncs.add(a)
+    return pifuncs
+
 def try_to_coalesce(pi, pj):
-    pset = to_isl_set(pi)
-    lset = to_isl_set(pj)
+    funcapps = function_applications(pi + pj)
+    print('funcapps:', funcapps)
+    func_map = {}
+    pli = copy.deepcopy(pi)
+    plj = copy.deepcopy(pj)
+    i = 0
+    for f in funcapps:
+        var = symbols('func_rep_' + str(i))
+        print('replacing {0} with {1}'.format(f, var))
+        pli = list(map(lambda x: x.subs(f, var), pli))
+        plj = list(map(lambda x: x.subs(f, var), plj))
+        i += 1
+        func_map[var] = f
+    print('pli =', pli)
+    print('plj =', plj)
+    # assert(len(funcapps) == 0)
+
+    pset = to_isl_set(pli)
+    lset = to_isl_set(plj)
     res = pset.union(lset).coalesce()
 
     if num_basic_set(res) == 1:
         resset = from_isl_set(res)
+        for var in func_map:
+            resset = list(map(lambda x: x.subs(var, func_map[var]), resset))
         return resset
     return None
     

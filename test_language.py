@@ -85,8 +85,8 @@ for p in ip.pieces:
     print()
 # assert(False)
 
-# merged_ip = merge_pieces(ip)
-# assert(len(merged_ip.pieces) == 1)
+merged_ip = merge_pieces(ip)
+assert(len(merged_ip.pieces) == 1)
 
 # evaluate_product(I, I)
 print()
