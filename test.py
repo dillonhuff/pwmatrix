@@ -56,8 +56,6 @@ I.add_piece(nsimplify(1), Bnds + [Eq(r, c)])
 
 Dense = PiecewiseExpression()
 Dense.add_piece(f(r, c), Bnds)
-# I.add_piece(r + c, Bnds + [Eq(r, c)])
-# print(P)
 
 ip = cull_pieces(mutate_after(evaluate_product(Dense, P), lambda x: simplify_sum(x) if isinstance(x, App) and isinstance(x.f, ConcreteSum) else x))
 print('--- Pieces of permutation matrix product...')
@@ -165,7 +163,6 @@ print()
 
 merged = merge_pieces(ip) # App(SymPlus(), sums)
 print('ip =', ip)
-# assert(False)
 
 for k in ip.vs:
     print('--- # of Pieces = {}'.format(len(k.pieces)))
@@ -183,7 +180,7 @@ ip43 = execute(Lambda([N, r, c], ip), [10, 4, 3])
 merged43 = execute(Lambda([N, r, c], merged), [10, 4, 3])
 assert(ip43 == merged43)
 
-ip43 = execute(Lambda([N, r, c], ip), [10, 3, 4])
-merged43 = execute(Lambda([N, r, c], merged), [10, 3, 4])
-assert(ip43 == merged43)
+ip34 = execute(Lambda([N, r, c], ip), [10, 3, 4])
+merged34 = execute(Lambda([N, r, c], merged), [10, 3, 4])
+assert(ip34 == merged34)
 
